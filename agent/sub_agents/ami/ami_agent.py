@@ -1,7 +1,7 @@
 import os
 
 from google.adk.agents import Agent
-from ...tools.ami_rag_tool import ami_rag_tool
+from ...tools.ami_rag_tool import ami_rag_tool, ami_datastore_tool
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -15,7 +15,7 @@ ami_agent = Agent(
     name='ami_agent',
     instruction=prompt,
     tools=[
-        ami_rag_tool,
+        ami_datastore_tool,
     ]
 )
 
