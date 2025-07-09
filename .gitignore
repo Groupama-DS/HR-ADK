@@ -1,4 +1,6 @@
-agent/key/
+agent/key/*
 rag/docs/*
 agent/.env
 *.pyc
+
+!agent/key/example.json
