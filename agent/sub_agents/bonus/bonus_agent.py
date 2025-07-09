@@ -1,7 +1,7 @@
 import os
 
 from google.adk.agents import Agent
-from ...tools.bonus_rag_tool import bonus_rag_tool
+from ...tools.bonus_rag_tool import bonus_rag_tool, bonus_datastore_tool
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -15,6 +15,6 @@ bonus_agent = Agent(
     name='bonus_agent',
     instruction=prompt,
     tools=[
-        bonus_rag_tool,
+        bonus_datastore_tool,
     ]
 )
