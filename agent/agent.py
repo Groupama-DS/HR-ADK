@@ -6,7 +6,7 @@ from.sub_agents.bonus.bonus_agent import bonus_agent
 from dotenv import load_dotenv
 load_dotenv()
 
-# Read the prompt
+# Read the prompt ^_^
 with open(os.path.join(os.path.dirname(__file__), 'menu_prompt.md'), encoding='utf-8') as f:
     prompt = f.read()
 
