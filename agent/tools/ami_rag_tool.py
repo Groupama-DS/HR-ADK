@@ -24,5 +24,5 @@ ami_rag_tool = VertexAiRagRetrieval(
 )
 
 ami_datastore_tool = VertexAiSearchTool(
-    data_store_id=os.environ.get("AMI_DATASTORE"),
+    data_store_id="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/ami-main-docs_1750757232003",
 )

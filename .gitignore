@@ -2,5 +2,6 @@ agent/key/*
 rag/docs/*
 agent/.env
 *.pyc
+files
 
 !agent/key/example.json

@@ -23,5 +23,5 @@ bonus_rag_tool = VertexAiRagRetrieval(
 )
 
 bonus_datastore_tool = VertexAiSearchTool(
-    data_store_id=os.environ.get("BONUS_DATASTORE"),
+    data_store_id="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/bonus-remunerare-v6_1750949303418",
 )
