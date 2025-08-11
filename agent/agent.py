@@ -4,6 +4,7 @@ import os
 from.sub_agents.ami.ami_agent import ami_agent
 from.sub_agents.bonus.bonus_agent import bonus_agent
 from dotenv import load_dotenv
+from.callbacks.state_callback import init_state
 load_dotenv()
 
 # Read the prompt ^_^
@@ -24,5 +25,6 @@ root_agent = LlmAgent(
     tools=[
         AgentTool(agent=ami_agent),
         AgentTool(agent=bonus_agent)
-    ]
+    ],
+    before_agent_callback=init_state
 )
