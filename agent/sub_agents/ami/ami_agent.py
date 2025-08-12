@@ -1,23 +1,19 @@
 import os
-
-from google.adk.agents import Agent
+from google.adk.agents import LlmAgent
 from ...tools.ami_rag_tool import ami_rag_tool, ami_datastore_tool
 from ...tools.ami_pachet_asigurare_tool import pachet_asigurare_tool
-
-from dotenv import load_dotenv
-load_dotenv()
+from agent.constants import MODEL
 
 # Read the prompt
 with open(os.path.join(os.path.dirname(__file__), 'ami_prompt.md'), encoding='utf-8') as f:
     prompt = f.read()
 
-ami_agent = Agent(
-    model=os.environ.get("MODEL"),
+ami_agent = LlmAgent(
+    model=MODEL,
     name='ami_agent',
     instruction=prompt,
     tools=[
         ami_datastore_tool,
-        pachet_asigurare_tool,
     ]
 )
 

@@ -3,10 +3,7 @@ import os
 from google.adk.tools.retrieval.vertex_ai_rag_retrieval import VertexAiRagRetrieval
 from google.adk.tools.vertex_ai_search_tool import VertexAiSearchTool
 from vertexai.preview import rag
-
-from dotenv import load_dotenv
-
-load_dotenv()
+from agent.constants import BONUS_DATASTORE
 
 bonus_rag_tool = VertexAiRagRetrieval(
     name='bonus_rag_tool',
@@ -23,5 +20,5 @@ bonus_rag_tool = VertexAiRagRetrieval(
 )
 
 bonus_datastore_tool = VertexAiSearchTool(
-    data_store_id="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/bonus-remunerare-v6_1750949303418",
+    data_store_id=BONUS_DATASTORE,
 )

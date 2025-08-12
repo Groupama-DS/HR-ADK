@@ -2,12 +2,8 @@
 import os
 from google.adk.tools.retrieval.vertex_ai_rag_retrieval import VertexAiRagRetrieval
 from google.adk.tools.vertex_ai_search_tool import VertexAiSearchTool
-
 from vertexai.preview import rag
-
-from dotenv import load_dotenv
-
-load_dotenv()
+from agent.constants import AMI_DATASTORE
 
 ami_rag_tool = VertexAiRagRetrieval(
     name='ami_rag_tool',
@@ -24,5 +20,5 @@ ami_rag_tool = VertexAiRagRetrieval(
 )
 
 ami_datastore_tool = VertexAiSearchTool(
-    data_store_id="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/ami-main-docs_1750757232003",
+    data_store_id=AMI_DATASTORE,
 )
