@@ -1,7 +1,7 @@
 import os
 from google.adk.tools.vertex_ai_search_tool import VertexAiSearchTool
-from agent.constants import BENEFICII_DATASTORE
+from agent.constants import PROJECT_ID, LOCATION, TEST_ENGINE_ID
 
 beneficii_datastore_tool = VertexAiSearchTool(
-    data_store_id=BENEFICII_DATASTORE
+    search_engine_id=f"projects/{PROJECT_ID}/locations/{LOCATION}/collections/default_collection/engines/{TEST_ENGINE_ID}"
 )

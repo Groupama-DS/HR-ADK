@@ -2,7 +2,6 @@ from google.adk.agents import LlmAgent
 from google.adk.tools.agent_tool import AgentTool
 import os
 from.sub_agents.ami.ami_agent import ami_agent
-from.sub_agents.bonus.bonus_agent import bonus_agent
 from.sub_agents.training.training_agent import training_agent
 from.sub_agents.salarizare_vanzari.salarizare_vanzari_agent import salarizare_vanzari_agent
 from.sub_agents.relatii_munca.relatii_munca_agent import relatii_munca_agent
@@ -31,7 +30,6 @@ root_agent = LlmAgent(
     output_key="menu_output",
     tools=[
         AgentTool(agent=ami_agent),
-        AgentTool(agent=bonus_agent),
         AgentTool(agent=training_agent),
         AgentTool(agent=salarizare_vanzari_agent),
         AgentTool(agent=relatii_munca_agent),

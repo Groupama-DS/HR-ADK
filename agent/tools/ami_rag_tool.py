@@ -3,7 +3,7 @@ import os
 from google.adk.tools.retrieval.vertex_ai_rag_retrieval import VertexAiRagRetrieval
 from google.adk.tools.vertex_ai_search_tool import VertexAiSearchTool
 from vertexai.preview import rag
-from agent.constants import AMI_DATASTORE
+from agent.constants import AMI_DATASTORE, PROJECT_ID, LOCATION, TEST_ENGINE_ID
 
 ami_rag_tool = VertexAiRagRetrieval(
     name='ami_rag_tool',
@@ -19,6 +19,7 @@ ami_rag_tool = VertexAiRagRetrieval(
     vector_distance_threshold=0.1,
 )
 
+
 ami_datastore_tool = VertexAiSearchTool(
-    data_store_id=AMI_DATASTORE,
+    search_engine_id=f"projects/{PROJECT_ID}/locations/{LOCATION}/collections/default_collection/engines/{TEST_ENGINE_ID}"
 )

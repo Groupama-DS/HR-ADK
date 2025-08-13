@@ -3,7 +3,7 @@ import os
 from google.adk.tools.retrieval.vertex_ai_rag_retrieval import VertexAiRagRetrieval
 from google.adk.tools.vertex_ai_search_tool import VertexAiSearchTool
 from vertexai.preview import rag
-from agent.constants import BONUS_DATASTORE
+from agent.constants import PROJECT_ID, LOCATION, TEST_ENGINE_ID
 
 bonus_rag_tool = VertexAiRagRetrieval(
     name='bonus_rag_tool',
@@ -20,5 +20,5 @@ bonus_rag_tool = VertexAiRagRetrieval(
 )
 
 bonus_datastore_tool = VertexAiSearchTool(
-    data_store_id=BONUS_DATASTORE,
+    search_engine_id=f"projects/{PROJECT_ID}/locations/{LOCATION}/collections/default_collection/engines/{TEST_ENGINE_ID}"
 )

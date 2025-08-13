@@ -1,139 +1,3 @@
-agent.py
-from google.adk.agents import LlmAgent
-from google.adk.tools.agent_tool import AgentTool
-import os
-from.sub_agents.ami.ami_agent import ami_agent
-from.sub_agents.bonus.bonus_agent import bonus_agent
-from dotenv import load_dotenv
-from.callbacks.state_callback import init_state
-load_dotenv()
-
-# Read the prompt ^_^
-with open(os.path.join(os.path.dirname(__file__), 'menu_prompt.md'), encoding='utf-8') as f:
-    prompt = f.read()
-
-root_agent = LlmAgent(
-    name="menu_agent",
-    model=os.environ.get("MODEL"),
-    description=(
-        "This agent acts as the main orchestrator for answering user questions about internal benefits " 
-        "and information related to Groupama Insurance Company. It intelligently routes queries to specialized sub-agents,"
-        " such as those handling AMI and bonus topics, ensuring accurate and comprehensive responses about company policies,"
-        " employee benefits, and other internal resources."
-    ),
-    instruction=prompt,
-    output_key="menu_output",
-    sub_agents=[ami_agent, bonus_agent],
-    before_agent_callback=init_state
-)
-
-
-ami_agent.py
-import os
-
-from google.adk.agents import LlmAgent
-from ...tools.ami_rag_tool import ami_rag_tool, ami_datastore_tool
-from ...tools.ami_pachet_asigurare_tool import pachet_asigurare_tool
-
-from dotenv import load_dotenv
-load_dotenv()
-
-# Read the prompt
-with open(os.path.join(os.path.dirname(__file__), 'ami_prompt.md'), encoding='utf-8') as f:
-    prompt = f.read()
-
-ami_agent = LlmAgent(
-    model=os.environ.get("MODEL"),
-    name='ami_agent',
-    instruction=prompt,
-    tools=[
-        ami_datastore_tool,
-    ]
-)
-
-bonus_agent.py
-import os
-
-from google.adk.agents import LlmAgent
-from ...tools.bonus_rag_tool import bonus_rag_tool, bonus_datastore_tool
-
-from dotenv import load_dotenv
-load_dotenv()
-
-# Read the prompt
-with open(os.path.join(os.path.dirname(__file__), 'bonus_prompt.md'), encoding='utf-8') as f:
-    prompt = f.read()
-
-bonus_agent = LlmAgent(
-    model=os.environ.get("MODEL"),
-    name='bonus_agent',
-    instruction=prompt,
-    tools=[
-        bonus_datastore_tool,
-    ]
-)
-
-ami_rag_tool.py
-
-import os
-from google.adk.tools.retrieval.vertex_ai_rag_retrieval import VertexAiRagRetrieval
-from google.adk.tools.vertex_ai_search_tool import VertexAiSearchTool
-
-from vertexai.preview import rag
-
-from dotenv import load_dotenv
-
-load_dotenv()
-
-ami_rag_tool = VertexAiRagRetrieval(
-    name='ami_rag_tool',
-    description=(
-        "Tool-ul contine un corpus cu documente nestructurate care sunt folosite pentur a raspunde la intrebari despre asigurarea medicala si ce servicii medicale sunt incluse in anumite pachete de sanatate."
-    ),
-    rag_resources=[
-        rag.RagResource(
-            rag_corpus=os.environ.get("AMI_RAG_CORPUS_V2")
-        )
-    ],
-    similarity_top_k=10,
-    vector_distance_threshold=0.1,
-)
-
-ami_datastore_tool = VertexAiSearchTool(
-    data_store_id="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/ami-main-docs_1750757232003",
-    max_results=5,
-)
-
-
-bonus_rag_tool.py
-
-import os
-from google.adk.tools.retrieval.vertex_ai_rag_retrieval import VertexAiRagRetrieval
-from google.adk.tools.vertex_ai_search_tool import VertexAiSearchTool
-from vertexai.preview import rag
-
-from dotenv import load_dotenv
-
-load_dotenv()
-
-bonus_rag_tool = VertexAiRagRetrieval(
-    name='bonus_rag_tool',
-    description=(
-        "Use this tool to answer user's questions about bonuses, payments and related procedures."
-    ),
-    rag_resources=[
-        rag.RagResource(
-            rag_corpus=os.environ.get("BONUS_RAG_CORPUS")
-        )
-    ],
-    similarity_top_k=10,
-    vector_distance_threshold=0.6,
-)
-
-bonus_datastore_tool = VertexAiSearchTool(
-    data_store_id="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/bonus-remunerare-v6_1750949303418",
-)
-
 
 ADK context:
 # ADK Python Repository
@@ -33135,8 +32999,113 @@ Furo
 
 
 
+agent.py
+from google.adk.agents import LlmAgent
+from google.adk.tools.agent_tool import AgentTool
+import os
+from.sub_agents.ami.ami_agent import ami_agent
+from.sub_agents.bonus.bonus_agent import bonus_agent
+from dotenv import load_dotenv
+from.callbacks.state_callback import init_state
+load_dotenv()
 
-{"error": "400 INVALID_ARGUMENT. {'error': {'code': 400, 'message': 'Multiple tools are supported only when they are all search tools.', 'status': 'INVALID_ARGUMENT'}}"}
+# Read the prompt ^_^
+with open(os.path.join(os.path.dirname(__file__), 'menu_prompt.md'), encoding='utf-8') as f:
+    prompt = f.read()
+
+root_agent = LlmAgent(
+    name="menu_agent",
+    model=os.environ.get("MODEL"),
+    description=(
+        "This agent acts as the main orchestrator for answering user questions about internal benefits " 
+        "and information related to Groupama Insurance Company. It intelligently routes queries to specialized sub-agents,"
+        " such as those handling AMI and bonus topics, ensuring accurate and comprehensive responses about company policies,"
+        " employee benefits, and other internal resources."
+    ),
+    instruction=prompt,
+    output_key="menu_output",
+    sub_agents=[ami_agent, bonus_agent],
+    before_agent_callback=init_state
+)
+
+
+ami_agent.py
+import os
+
+from google.adk.agents import LlmAgent
+from ...tools.ami_rag_tool import ami_rag_tool, ami_datastore_tool
+from ...tools.ami_pachet_asigurare_tool import pachet_asigurare_tool
+
+from dotenv import load_dotenv
+load_dotenv()
+
+# Read the prompt
+with open(os.path.join(os.path.dirname(__file__), 'ami_prompt.md'), encoding='utf-8') as f:
+    prompt = f.read()
+
+ami_agent = LlmAgent(
+    model=os.environ.get("MODEL"),
+    name='ami_agent',
+    instruction=prompt,
+    tools=[
+        ami_datastore_tool,
+    ]
+)
+
+bonus_agent.py
+import os
+
+from google.adk.agents import LlmAgent
+from ...tools.bonus_rag_tool import bonus_rag_tool, bonus_datastore_tool
+
+from dotenv import load_dotenv
+load_dotenv()
+
+# Read the prompt
+with open(os.path.join(os.path.dirname(__file__), 'bonus_prompt.md'), encoding='utf-8') as f:
+    prompt = f.read()
+
+bonus_agent = LlmAgent(
+    model=os.environ.get("MODEL"),
+    name='bonus_agent',
+    instruction=prompt,
+    tools=[
+        bonus_datastore_tool,
+    ]
+)
+
+ami_rag_tool.py
+
+import os
+from google.adk.tools.retrieval.vertex_ai_rag_retrieval import VertexAiRagRetrieval
+from google.adk.tools.vertex_ai_search_tool import VertexAiSearchTool
+
+from vertexai.preview import rag
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+ami_datastore_tool = VertexAiSearchTool(
+    data_store_id="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/ami-main-docs_1750757232003",
+    max_results=5,
+)
+
+
+bonus_rag_tool.py
+
+import os
+from google.adk.tools.retrieval.vertex_ai_rag_retrieval import VertexAiRagRetrieval
+from google.adk.tools.vertex_ai_search_tool import VertexAiSearchTool
+from vertexai.preview import rag
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+bonus_datastore_tool = VertexAiSearchTool(
+    data_store_id="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/bonus-remunerare-v6_1750949303418",
+)
 
 
 
