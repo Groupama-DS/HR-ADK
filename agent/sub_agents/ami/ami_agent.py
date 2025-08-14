@@ -1,6 +1,6 @@
 import os
 from google.adk.agents import LlmAgent
-from ...tools.ami_rag_tool import ami_rag_tool, ami_datastore_tool
+from ...tools.ami_rag_tool import ami_datastore_tool
 from ...tools.ami_pachet_asigurare_tool import pachet_asigurare_tool
 from agent.constants import MODEL
 
