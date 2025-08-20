@@ -3,7 +3,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 MODEL="gemini-2.5-flash"
-#BONUS_DATASTORE="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/bonus-remunerare-v6_1750949303418"
 # AMI_DATASTORE="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/ami-main-docs_1750757232003"
 # TRAINING_DATASTORE="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/training_1754549769417"
 # SALARIZARE_VANZARI_DATASTORE="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/salarizare-vanzari_1754549885702"
