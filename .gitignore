@@ -3,5 +3,7 @@ rag/docs/*
 agent/.env
 *.pyc
 files
+agent-env
+frontend/.env
 
 !agent/key/example.json

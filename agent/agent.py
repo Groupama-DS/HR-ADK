@@ -13,6 +13,8 @@ from agent.constants import MODEL
 from.callbacks.state_callback import init_state
 load_dotenv()
 
+#TODO Example Store
+
 # Read the prompt ^_^
 with open(os.path.join(os.path.dirname(__file__), 'menu_prompt.md'), encoding='utf-8') as f:
     prompt = f.read()

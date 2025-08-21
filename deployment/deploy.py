@@ -29,8 +29,8 @@ flags.DEFINE_string("location", None, "GCP location.")
 flags.DEFINE_string("bucket", None, "GCP bucket.")
 flags.DEFINE_string("resource_id", None, "ReasoningEngine resource ID.")
 
-flags.DEFINE_bool("list", False, "List all agents.")
-flags.DEFINE_bool("create", True, "Creates a new agent.")
+flags.DEFINE_bool("list", True, "List all agents.")
+flags.DEFINE_bool("create", False, "Creates a new agent.")
 flags.DEFINE_bool("delete", False, "Deletes an existing agent.")
 flags.mark_bool_flags_as_mutual_exclusive(["create", "delete"])
 
@@ -43,13 +43,15 @@ def create() -> None:
         adk_app,
         display_name=root_agent.name,
         requirements=[
-            "google-adk (>=0.0.2)",
-            "google-cloud-aiplatform[agent_engines] (>=1.91.0,!=1.92.0)",
-            "google-genai (>=1.5.0,<2.0.0)",
-            "pydantic (>=2.10.6,<3.0.0)",
-            "absl-py (>=2.2.1,<3.0.0)",
+            "google-adk",
+            "google-cloud-aiplatform[adk,agent_engines]",
+            "google-genai",
+            "pydantic",
+            "absl-py",
+            "python-dotenv"
         ],
-        #        extra_packages=[""],
+        # Package the local 'agent' directory and send it to the remote environment.
+        extra_packages=["./agent"],
     )
     print(f"Created remote agent: {remote_agent.resource_name}")
 
