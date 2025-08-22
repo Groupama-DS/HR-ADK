@@ -51,7 +51,7 @@ def create() -> None:
             "python-dotenv"
         ],
         # Package the local 'agent' directory and send it to the remote environment.
-        extra_packages=["./agent"],
+        extra_packages=["agent"],
     )
     print(f"Created remote agent: {remote_agent.resource_name}")
 

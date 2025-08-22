@@ -1,2 +1,0 @@
-recursive-include agent *
-```    This tells the deployment process: "When you package the `agent` directory, include every single file inside it, not just the Python files."
