@@ -2,6 +2,7 @@ import os
 from google.adk.agents import LlmAgent
 from ...tools.beneficii_rag_tool import beneficii_datastore_tool
 from agent.constants import MODEL
+from ...callbacks.grounding_callback import save_grounding_metadata_to_state
 
 # Read the prompt
 with open(os.path.join(os.path.dirname(__file__), 'beneficii_prompt.md'), encoding='utf-8') as f:
@@ -13,5 +14,6 @@ beneficii_agent = LlmAgent(
     instruction=prompt,
     tools=[
         beneficii_datastore_tool,
-    ]
+    ],
+    after_model_callback=save_grounding_metadata_to_state
 )

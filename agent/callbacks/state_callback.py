@@ -7,8 +7,5 @@ def init_state(callback_context: CallbackContext) -> Optional[LlmResponse]:
     state_key="pachet_asigurare"
     if state_key not in callback_context.state:
         callback_context.state[state_key] = "nespecificat"
-        print("init")
-    else:
-        print("already init")
 
     return None

@@ -2,6 +2,7 @@ import os
 from google.adk.agents import LlmAgent
 from ...tools.evaluarea_performantei_rag_tool import evaluarea_performantei_datastore_tool
 from agent.constants import MODEL
+from ...callbacks.grounding_callback import save_grounding_metadata_to_state
 
 # Read the prompt
 with open(os.path.join(os.path.dirname(__file__), 'evaluarea_performantei_prompt.md'), encoding='utf-8') as f:
@@ -13,5 +14,6 @@ evaluarea_performantei_agent = LlmAgent(
     instruction=prompt,
     tools=[
         evaluarea_performantei_datastore_tool,
-    ]
+    ],
+    after_model_callback=save_grounding_metadata_to_state
 )

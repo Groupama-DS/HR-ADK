@@ -72,6 +72,36 @@ footer {
     overflow-y: auto !important;
 }
 
+/* This styles the track (the part the scrollbar handle slides in) */
+#chatbot .bubble-wrap::-webkit-scrollbar-track {
+  background: transparent; /* Makes the track invisible */
+}
+
+/* This styles the draggable scrollbar handle */
+#chatbot .bubble-wrap::-webkit-scrollbar-thumb {
+  background-color: #555;    /* A medium gray color for the handle */
+  border-radius: 10px;       /* Makes the handle have rounded corners */
+  border: 2px solid #333;    /* Creates a small border/padding effect */
+}
+
+/* This makes the handle lighter when you hover over it */
+#chatbot .bubble-wrap::-webkit-scrollbar-thumb:hover {
+  background-color: #777;
+}
+
+/* --- For Firefox --- */
+/* Firefox has a simpler way of styling scrollbars */
+#chatbot .bubble-wrap {
+  scrollbar-width: thin; /* Can be "auto", "thin", or "none" */
+  scrollbar-color: #555 #333; /* Sets the color of the thumb and the track */
+}
+
+.adk-source-number {
+    font-weight: bold;
+    margin-right: 8px;
+    color: #a0a0a0; /* A light gray color, adjust as needed */
+}
+
 /* === Source Card Styling (Theme-Aware) === */
 .sources-panel-container {
     padding: 10px;
