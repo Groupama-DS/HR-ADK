@@ -6,6 +6,8 @@ from google.adk.sessions import InMemorySessionService
 from google.genai import types
 import json
 
+from app_utils import CUSTOM_CSS, generate_download_signed_url_v4
+
 #TODO extra scroll bar when generating messages
 #TODO gs: links from sources do nothing
 
@@ -23,44 +25,6 @@ user_id = "demo_user"
 session = None
 session_id = None
 
-CUSTOM_CSS = """
-
-footer {
-    visibility: hidden
-}
-
-/* === Source Card Styling (Theme-Aware) === */
-.sources-panel-container {
-    padding: 10px;
-}
-.adk-sources-container {
-    display: flex;
-    overflow-x: auto;
-    gap: 16px;
-    padding-bottom: 10px;
-}
-.adk-source-card {
-    flex: 0 0 300px;
-    width: 300px;
-    height: 200px;
-    border: 1px solid var(--border-color-primary);
-    border-radius: var(--radius-lg);
-    padding: 12px;
-    background: var(--background-fill-primary);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    font-family: var(--font);
-    font-size: var(--text-sm);
-    color: var(--text-color-primary);
-}
-.adk-source-card-content { overflow-y: auto; flex-grow: 1; }
-.adk-source-card-footer { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-color-primary); }
-.adk-source-card-title { font-weight: bold; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-color-primary); }
-.adk-source-card-link { color: var(--color-accent); text-decoration: none; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.adk-source-card-link:hover { text-decoration: underline; }
-"""
-
 def create_sources_html(grounding_metadata):
     """Generates the HTML for the source cards, wrapped in a collapsible <details> tag."""
     if not grounding_metadata or 'grounding_chunks' not in grounding_metadata or not grounding_metadata['grounding_chunks']:
@@ -73,16 +37,32 @@ def create_sources_html(grounding_metadata):
         uri = retrieved_context.get('uri', '#')
         text_content = retrieved_context.get('text', 'No content available.')
 
+        # Extract bucket and blob name from gs:// URI
+        signed_url = "#"
+        if uri.startswith("gs://"):
+            try:
+                # Split the URI into bucket and blob name
+                # Example: gs://hackathon_hr_minds/Asigurare_Medicala/RM_AMI/Lista%20servicii%20medicale%20ambulatorii_adulti%20GAM.pdf
+                path_parts = uri[len("gs://"):].split('/', 1)
+                if len(path_parts) == 2:
+                    bucket_name = path_parts[0]
+                    blob_name = path_parts[1]
+                    signed_url = generate_download_signed_url_v4(bucket_name, blob_name)
+                else:
+                    print(f"Warning: Could not parse bucket and blob from URI: {uri}")
+            except Exception as e:
+                print(f"Error generating signed URL for {uri}: {e}")
+                signed_url = "#" # Fallback to no link on error
+
         cards_html += f"""
         <div class="adk-source-card">
             <div class="adk-source-card-content">{text_content}</div>
             <div class="adk-source-card-footer">
-                <span class="adk-source-card-title" title="{title}">{title}</span>
-                <a href="{uri}" target="_blank" class="adk-source-card-link" title="{uri}">{uri}</a>
+                <a href="{signed_url}" target="_blank" class="adk-source-card-link" title="{title}">{title}</a>
             </div>
         </div>
         """
-    
+
     return f"""
     <details class="sources-details" open>
         <summary>Sources</summary>
