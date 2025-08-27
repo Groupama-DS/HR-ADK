@@ -8,9 +8,6 @@ import json
 
 from app_utils import CUSTOM_CSS, generate_download_signed_url_v4
 
-#TODO extra scroll bar when generating messages
-#TODO gs: links from sources do nothing
-
 # Bypass the system proxy for localhost communication.
 os.environ['NO_PROXY'] = '127.0.0.1,localhost'
 
@@ -120,7 +117,11 @@ async def chat_with_agent(message, history):
 demo = gr.ChatInterface(
     chat_with_agent,
     examples=["Am inclus RMN in asigurarea medicala?"],
-    css=CUSTOM_CSS
+    css=CUSTOM_CSS,
+    chatbot= gr.Chatbot(
+        scale=1,
+        elem_id="chatbot",
+        ),
 )
 
 if __name__ == "__main__":

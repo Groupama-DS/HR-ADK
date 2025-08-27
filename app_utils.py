@@ -34,6 +34,44 @@ footer {
     display: none !important;
 }
 
+.gradio-container {
+    height: 100vh !important;
+    max-height: 100vh !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* 2. Make all intermediate containers pass the flex sizing down. */
+.gradio-container > .main, .gradio-container > .main > .wrap {
+    flex-grow: 1;
+    overflow: hidden; /* Critical: parents must not scroll */
+    display: flex;
+    flex-direction: column;
+}
+
+/* 3. Target the ChatInterface component itself. */
+.chatinterface {
+    flex-grow: 1;
+    overflow: hidden; /* Critical: parents must not scroll */
+    display: flex;
+    flex-direction: column;
+}
+
+/* 4. Target the chatbot panel. It should grow to fill the space but NOT scroll.
+      The min-height: 0 is a key flexbox trick to allow shrinking. */
+#chatbot {
+    flex-grow: 1 !important;
+    overflow: hidden !important; /* This element does NOT scroll. */
+    min-height: 0 !important;
+}
+
+/* 5. Target the actual message list inside the chatbot.
+      THIS is the one and only element that should scroll. */
+#chatbot > .bubble-wrap {
+    overflow-y: auto !important;
+}
+
 /* === Source Card Styling (Theme-Aware) === */
 .sources-panel-container {
     padding: 10px;
