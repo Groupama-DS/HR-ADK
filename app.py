@@ -95,19 +95,15 @@ async def chat_with_agent(message, history):
         session_id=session_id,
         new_message=content,
     ):
-        if (hasattr(event, 'actions') and event.actions and
-            hasattr(event.actions, 'state_delta') and event.actions.state_delta and
-            'last_grounding_metadata' in event.actions.state_delta and
-            event.actions.state_delta['last_grounding_metadata']):
-
-            grounding_metadata = event.actions.state_delta['last_grounding_metadata']
+        if event.is_final_response():
+            grounding_metadata = event.grounding_metadata
             
-
-
         if event.content and event.content.parts:
             for part in event.content.parts:
                 if hasattr(part, 'text') and part.text:
                     assistant_response_parts.append(part.text)
+
+        print(event)
 
     final_response_text = "".join(assistant_response_parts)
 
