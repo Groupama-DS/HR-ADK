@@ -1,16 +1,33 @@
 from __future__ import annotations
-from typing import Optional
-from google.genai import types
-from google.adk.tools.vertex_ai_search_tool import VertexAiSearchTool
 
-class CustomVertexAISearchTool(VertexAiSearchTool):
-  """A custom Vertex AI Search tool that allows overriding the name and description."""
+from typing import Optional
+from typing import TYPE_CHECKING
+
+from google.genai import types
+from typing_extensions import override
+
+from google.adk.utils.model_name_utils import is_gemini_1_model
+from google.adk.utils.model_name_utils import is_gemini_model
+from google.adk.tools.base_tool import BaseTool
+from google.adk.tools.tool_context import ToolContext
+
+if TYPE_CHECKING:
+  from google.adk.models import LlmRequest
+
+
+class CustomVertexAiSearchTool(BaseTool):
+  """A built-in tool using Vertex AI Search.
+
+  Attributes:
+    data_store_id: The Vertex AI search data store resource ID.
+    search_engine_id: The Vertex AI search engine resource ID.
+  """
 
   def __init__(
       self,
       *,
-      name: str,
-      description: str,
+      name: str = 'vertex_ai_search',  # Added name with a default value
+      description: str = 'Vertex AI Search tool', # Added description with a default value
       data_store_id: Optional[str] = None,
       data_store_specs: Optional[
           list[types.VertexAISearchDataStoreSpec]
@@ -19,7 +36,7 @@ class CustomVertexAISearchTool(VertexAiSearchTool):
       filter: Optional[str] = None,
       max_results: Optional[int] = None,
   ):
-    """Initializes the custom Vertex AI Search tool.
+    """Initializes the Vertex AI Search tool.
 
     Args:
       name: The name of the tool.
@@ -31,15 +48,60 @@ class CustomVertexAISearchTool(VertexAiSearchTool):
         searched. It should only be set if engine is used.
       search_engine_id: The Vertex AI search engine resource ID in the format of
         "projects/{project}/locations/{location}/collections/{collection}/engines/{engine}".
-      filter: The filter to apply to the search.
-      max_results: The maximum number of results to return.
+
+    Raises:
+      ValueError: If both data_store_id and search_engine_id are not specified
+      or both are specified.
     """
-    super().__init__(
-        data_store_id=data_store_id,
-        data_store_specs=data_store_specs,
-        search_engine_id=search_engine_id,
-        filter=filter,
-        max_results=max_results,
-    )
-    self.name = name
-    self.description = description
+    # Pass name and description to the base class constructor
+    super().__init__(name=name, description=description)
+    if (data_store_id is None and search_engine_id is None) or (
+        data_store_id is not None and search_engine_id is not None
+    ):
+      raise ValueError(
+          'Either data_store_id or search_engine_id must be specified.'
+      )
+    if data_store_specs is not None and search_engine_id is None:
+      raise ValueError(
+          'search_engine_id must be specified if data_store_specs is specified.'
+      )
+    self.data_store_id = data_store_id
+    self.data_store_specs = data_store_specs
+    self.search_engine_id = search_engine_id
+    self.filter = filter
+    self.max_results = max_results
+
+  @override
+  async def process_llm_request(
+      self,
+      *,
+      tool_context: ToolContext,
+      llm_request: LlmRequest,
+  ) -> None:
+    
+    if is_gemini_model(llm_request.model):
+      if is_gemini_1_model(llm_request.model) and llm_request.config.tools:
+        raise ValueError(
+            'Vertex AI search tool can not be used with other tools in Gemini'
+            ' 1.x.'
+        )
+      llm_request.config = llm_request.config or types.GenerateContentConfig()
+      llm_request.config.tools = llm_request.config.tools or []
+      llm_request.config.tools.append(
+          types.Tool(
+              retrieval=types.Retrieval(
+                  vertex_ai_search=types.VertexAISearch(
+                      datastore=self.data_store_id,
+                      data_store_specs=self.data_store_specs,
+                      engine=self.search_engine_id,
+                      filter=self.filter,
+                      max_results=self.max_results,
+                  )
+              )
+          )
+      )
+    else:
+      raise ValueError(
+          'Vertex AI search tool is not supported for model'
+          f' {llm_request.model}'
+      )

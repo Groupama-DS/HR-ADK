@@ -1,5 +1,8 @@
 from google.adk.agents import LlmAgent
 from google.adk.tools.agent_tool import AgentTool
+from google.adk.planners import BuiltInPlanner
+from google.genai import types
+
 import os
 # from.sub_agents.ami.ami_agent import ami_agent
 # from.sub_agents.training.training_agent import training_agent
@@ -10,7 +13,6 @@ import os
 # from.sub_agents.evaluarea_performantei.evaluarea_performantei_agent import evaluarea_performantei_agent
 from dotenv import load_dotenv
 from agent.constants import MODEL
-from.callbacks.state_callback import init_state
 
 from .tools.ami_rag_tool import ami_datastore_tool
 from .tools.beneficii_rag_tool import beneficii_datastore_tool
@@ -30,6 +32,14 @@ load_dotenv()
 with open(os.path.join(os.path.dirname(__file__), 'menu_prompt.md'), encoding='utf-8') as f:
     prompt = f.read()
 
+# 1. Create a ThinkingConfig to ask the model for its thoughts.
+thinking_config = types.ThinkingConfig(
+    include_thoughts=True,  # Key parameter to enable thinking output
+)
+
+# 2. Instantiate the BuiltInPlanner with the config.
+planner = BuiltInPlanner(thinking_config=thinking_config)
+
 root_agent = LlmAgent(
     name="menu_agent",
     model=MODEL,
@@ -41,6 +51,7 @@ root_agent = LlmAgent(
     ),
     instruction=prompt,
     output_key="menu_output",
+    planner=planner,
     tools=[
         ami_datastore_tool,
         beneficii_datastore_tool,
