@@ -44,10 +44,9 @@ root_agent = LlmAgent(
     name="menu_agent",
     model=MODEL,
     description=(
-        "This agent acts as the main orchestrator for answering user questions about internal benefits "
-        "and information related to Groupama Insurance Company. It intelligently routes queries to specialized tools,"
-        " such as those handling AMI(Asigurarea Medicala Integrala), training, salarizare vanzari, relatii munca, logistica, beneficii, and evaluarea performantei topics, ensuring accurate and comprehensive responses about company policies,"
-        " employee benefits, and other internal resources."
+        "Un asistent virtual pentru angajați, capabil să răspundă la întrebări specifice prin căutarea"
+        " în documentația internă a companiei. Utilizează unelte de căutare dedicate pentru a oferi informații despre "
+        "AMI(Asigurarea Medicala Integrala), training, salarizare vanzari, relatii munca, logistica, beneficii si evaluarea performantei"
     ),
     instruction=prompt,
     output_key="menu_output",
