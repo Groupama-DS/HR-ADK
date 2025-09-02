@@ -29,10 +29,156 @@ def generate_download_signed_url_v4(bucket_name, blob_name):
 
 
 CUSTOM_CSS = """
-
 footer {
     display: none !important;
 }
+
+.thoughts-details {
+    background-color: var(--body-background-fill);
+    border: 1px solid var(--border-color-primary);
+    border-radius: var(--radius-lg);
+    margin-bottom: 1rem;
+    transition: background-color 0.2s ease;
+}
+
+/* The entire clickable summary area */
+.thoughts-summary {
+    display: block;
+    padding: 0;
+    cursor: pointer;
+    outline: none;
+    list-style: none; /* Hide default marker in Safari */
+}
+.thoughts-summary::-webkit-details-marker {
+    display: none; /* Hide default marker in Chrome */
+}
+
+/* Top header row */
+.summary-top-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    color: var(--text-color-secondary);
+    font-size: var(--text-sm);
+}
+.summary-top-left {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+/* Sparkle Icon */
+.sparkle-icon {
+    width: 18px;
+    height: 18px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23619aff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2 L14.5 9.5 L22 12 L14.5 14.5 L12 22 L9.5 14.5 L2 12 L9.5 9.5 Z'/%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+
+.thinking-text {
+    color: var(--text-color-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Loading Dots Animation */
+.loading-dots span {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--text-color-secondary);
+    margin: 0 1px;
+    animation: loading-pulse 1.4s infinite ease-in-out both;
+}
+.loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+.loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+@keyframes loading-pulse {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
+    40% { transform: scale(1.0); opacity: 1; }
+}
+
+.experimental-text {
+    color: var(--text-color-secondary);
+}
+
+/* "Auto" button */
+.auto-button {
+    background-color: var(--background-fill-secondary);
+    border: 1px solid var(--border-color-accent);
+    color: var(--text-color-primary);
+    padding: 2px 10px;
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-medium);
+}
+
+/* Divider line */
+.summary-divider {
+    height: 1px;
+    background-color: var(--border-color-primary);
+}
+
+/* Bottom summary row (the part that shows the thought) */
+.summary-bottom-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    color: var(--text-color-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+.summary-title {
+    font-size: var(--text-md);
+}
+
+/* === NEW: Chevron Icon (CSS Triangle) === */
+.summary-chevron {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid var(--text-color-secondary); /* This creates the downward-pointing triangle */
+    transition: transform 0.2s ease-in-out;
+}
+/* Rotate chevron when the details element is open */
+.thoughts-details[open] > .thoughts-summary .summary-chevron {
+    transform: rotate(180deg);
+}
+
+/* === NEW: Expand/Collapse Text Visibility === */
+.collapse-text {
+    display: none;
+}
+.thoughts-details[open] > .thoughts-summary .expand-text {
+    display: none;
+}
+.thoughts-details[open] > .thoughts-summary .collapse-text {
+    display: inline;
+}
+
+
+/* The actual content panel that holds the thoughts */
+.thoughts-panel-container {
+    padding: 0 var(--spacing-lg) var(--spacing-lg) var(--spacing-lg);
+    border-top: 1px solid var(--border-color-primary);
+}
+
+/* Item styling inside the panel */
+.thought-item {
+    padding: var(--spacing-lg) 0;
+    border-bottom: 1px solid var(--border-color-primary);
+    color: var(--text-color-primary);
+}
+.thought-item:last-child { border-bottom: none; padding-bottom: 0; }
+.thought-item p { margin-top: 0; margin-bottom: var(--spacing-md); line-height: 1.6; font-size: var(--text-md); }
+.thought-item code { background-color: var(--background-fill-primary); border: 1px solid var(--border-color-primary); padding: 2px 6px; border-radius: var(--radius-sm); font-size: var(--font-mono-size); }
+.thought-item pre { background-color: var(--background-fill-primary); border: 1px solid var(--border-color-primary); border-radius: var(--radius-md); padding: var(--spacing-lg); overflow-x: auto; }
+.thought-item pre code { background-color: transparent; border: none; padding: 0; }
 
 .gradio-container {
     height: 100vh !important;
