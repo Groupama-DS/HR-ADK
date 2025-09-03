@@ -10,12 +10,10 @@ import re
 from google.adk.agents.run_config import RunConfig
 from google.adk.agents.run_config import StreamingMode
 
-from app_utils import CUSTOM_CSS, generate_download_signed_url_v4
+from app_utils import CUSTOM_CSS, generate_download_signed_url_v4, CustomChatInterface
 
 # Bypass the system proxy for localhost communication.
 os.environ['NO_PROXY'] = '127.0.0.1,localhost'
-
-# Set up session service and runner
 session_service = InMemorySessionService()
 runner = Runner(
     app_name="GroupamaAgent",
@@ -165,8 +163,8 @@ def create_thoughts_html(thoughts, is_final=False):
 
 async def chat_with_agent(message, history):
     """
-    Handles the chat interaction, separating thoughts from the main response
-    and yielding updates for all UI components.
+    Handles the chat interaction, combining thoughts, response, and sources
+    into a single HTML string for the chatbot.
     """
     global session, session_id
     if session is None or session_id is None:
@@ -178,52 +176,67 @@ async def chat_with_agent(message, history):
     grounding_metadata = None
 
     content = types.Content(role="user", parts=[types.Part(text=message)])
+    try:
+        async for event in runner.run_async(
+            user_id=user_id,
+            session_id=session_id,
+            new_message=content,
+            run_config=RunConfig(
+                streaming_mode=StreamingMode.SSE
+            )
+        ):
+            with open("output.txt", "a", encoding="utf-8") as f:
+                f.write(str(event) + "\n##################################################################\n")
+            
+            if event.is_final_response():
+                thought_parts.clear()
+                assistant_response_parts.clear()
 
-    async for event in runner.run_async(
-        user_id=user_id,
-        session_id=session_id,
-        new_message=content,
-        run_config=RunConfig(
-            streaming_mode=StreamingMode.SSE
-        )
-    ):
-        if event.is_final_response():
-            thought_parts.clear()
-        if event.grounding_metadata:
-            if event.grounding_metadata.grounding_chunks:
+            if event.grounding_metadata and event.grounding_metadata.grounding_chunks:
                 grounding_metadata = event.grounding_metadata
 
-        if event.content and event.content.parts:
-            for part in event.content.parts:
-                if getattr(part, 'thought', False):
-                    thought_parts.append(part.text)
-                elif hasattr(part, 'text') and part.text:
-                    assistant_response_parts.append(part.text)
+            if event.content and event.content.parts:
+                for part in event.content.parts:
+                    if getattr(part, 'thought', False):
+                        thought_parts.append(part.text)
+                    elif hasattr(part, 'text') and part.text:
+                        assistant_response_parts.append(part.text)
 
-            full_response_so_far = "".join(assistant_response_parts)
-            # During streaming, call with is_final=False
-            thoughts_html = create_thoughts_html(thought_parts, is_final=False)
-            yield [gr.HTML(thoughts_html), full_response_so_far, gr.HTML("")]
+                # --- Combine all parts into a single HTML string for streaming ---
+                thoughts_html = create_thoughts_html(thought_parts, is_final=False)
+                response_so_far = "".join(assistant_response_parts)
+                # Convert markdown for the main response to HTML
+                response_html = markdown.markdown(response_so_far)
+                
+                # Yield a single combined string
+                yield gr.HTML(f"{thoughts_html}{response_html}")
 
+    except ValueError as e:
+        if "Chunk too big" in str(e):
+            print("Successfully caught and handled the expected final SSE chunk error.")
+            pass
+        else:
+            raise e
+
+    # --- Combine all parts for the final output ---
     final_response_text = "".join(assistant_response_parts)
+    final_response_html = markdown.markdown(final_response_text) # Convert final response to HTML
     sources_html = create_sources_html(grounding_metadata)
-    # After streaming, call with is_final=True for the final static view
     final_thoughts_html = create_thoughts_html(thought_parts, is_final=True)
 
+    # Yield the final, single HTML string that includes everything
+    final_combined_output = f"{final_thoughts_html}{final_response_html}{sources_html}"
+    yield gr.HTML(final_combined_output)
 
-    yield [gr.HTML(final_thoughts_html), final_response_text, gr.HTML(sources_html)]
 
-
-demo = gr.ChatInterface(
+# --- MODIFIED CHAT INTERFACE DEFINITION ---
+# The ChatInterface now correctly handles a function that yields a single string.
+demo = CustomChatInterface(
     chat_with_agent,
-    type="messages",
     examples=["Am inclus RMN in asigurarea medicala?", "Ce beneficii am ca angajat?"],
     css=CUSTOM_CSS,
-    chatbot= gr.Chatbot(
-        scale=1,
-        elem_id="chatbot",
-        type="messages",
-        ),
+    save_history=True,
+    type="messages",
 )
 
 if __name__ == "__main__":

@@ -1,6 +1,57 @@
 import datetime
 
 from google.cloud import storage
+import gradio as gr
+from gradio import Chatbot
+from gradio.components.chatbot import MessageDict
+import re
+
+# This helper function remains the same. It identifies your specific HTML output.
+def is_my_html_output(content):
+    """Checks if a string content is the combined HTML output from the agent."""
+    if isinstance(content, str) and (
+        '<details class="sources-details">' in content or
+        '<details class="thoughts-details">' in content
+    ):
+        return True
+    return False
+
+class CustomChatInterface(gr.ChatInterface):
+    def _load_conversation(
+        self,
+        index: int,
+        conversations: list[list[MessageDict]],
+    ) -> tuple[int, Chatbot]:
+        """
+        Overrides the base method to re-hydrate HTML content from saved strings.
+        This version correctly handles the conversation data.
+        """
+        # 1. Get the specific conversation history from the list of saved conversations.
+        # This is the raw, serialized data where your HTML is just a string.
+        loaded_messages = conversations[index]
+
+        # 2. Iterate through the messages and modify them in place.
+        if loaded_messages:
+            for i in range(len(loaded_messages)):
+                msg = loaded_messages[i]
+                # Check if it's an assistant message containing our specific HTML structure.
+                if msg.get("role") == "assistant" and is_my_html_output(msg.get("content")):
+                    # Replace the raw string with a gr.HTML component object.
+                    # This tells Gradio to render it as HTML, not display it as a string.
+                    loaded_messages[i]["content"] = gr.HTML(msg["content"])
+
+        # 3. Return a tuple containing the index and a *new* Chatbot component
+        #    initialized with our modified conversation history. This perfectly mimics
+        #    the behavior and return signature of the original method.
+        return (
+            index,
+            Chatbot(
+                value=loaded_messages,  # Pass the modified list here
+                feedback_value=[],
+                type="messages",
+            ),
+        )
+
 
 
 def generate_download_signed_url_v4(bucket_name, blob_name):
