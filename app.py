@@ -2,10 +2,8 @@ import gradio as gr
 import os
 from agent.agent import root_agent
 from google.adk.runners import Runner
-from google.adk.sessions import InMemorySessionService
+from google.adk.sessions import InMemorySessionService, DatabaseSessionService
 from google.genai import types
-import html
-import markdown
 import re
 from google.adk.agents.run_config import RunConfig
 from google.adk.agents.run_config import StreamingMode
@@ -24,147 +22,85 @@ user_id = "demo_user"
 session = None
 session_id = None
 
-def create_sources_html(grounding_metadata):
+def create_sources_markdown(grounding_metadata):
     """
-    Generates the HTML for the numbered source cards, wrapped in a
-    collapsible <details> tag.
+    Creates a Markdown formatted string for the sources.
     """
     if not grounding_metadata or not hasattr(grounding_metadata, 'grounding_chunks') or not grounding_metadata.grounding_chunks:
         return ""
-    
+
     used_chunk_indices = set()
     if grounding_metadata and grounding_metadata.grounding_supports:
-        # Collect all unique chunk indices that were used
         for support in grounding_metadata.grounding_supports:
             for chunk_idx in support.grounding_chunk_indices:
-                used_chunk_indices.add(chunk_idx + 1)
+                used_chunk_indices.add(chunk_idx)
 
-    cards_html = ""
-    # Use enumerate to get a numbered index for each source, starting from 1
-    for i, chunk in enumerate(grounding_metadata.grounding_chunks, 1):
+    if not used_chunk_indices:
+        return ""
+
+    markdown_parts = []
+    for i, chunk in enumerate(grounding_metadata.grounding_chunks):
         if i in used_chunk_indices:
             retrieved_context = chunk.retrieved_context
             title = getattr(retrieved_context, 'title', 'Source Document')
             uri = getattr(retrieved_context, 'uri', '#')
             text_content = getattr(retrieved_context, 'text', 'No content available.')
-
-            # Escape HTML special characters in the text content to prevent XSS
-            escaped_text_content = html.escape(text_content)
-
-            # Extract bucket and blob name from gs:// URI
+            
             signed_url = "#"
             if uri.startswith("gs://"):
                 try:
                     path_parts = uri[len("gs://"):].split('/', 1)
                     if len(path_parts) == 2:
-                        bucket_name = path_parts[0]
-                        blob_name = path_parts[1]
+                        bucket_name, blob_name = path_parts
                         signed_url = generate_download_signed_url_v4(bucket_name, blob_name)
-                    else:
-                        print(f"Warning: Could not parse bucket and blob from URI: {uri}")
                 except Exception as e:
                     print(f"Error generating signed URL for {uri}: {e}")
-                    signed_url = "#"
+            
+            # Format as a Markdown list item with a link and a blockquote for the content
+            markdown_parts.append(f"\n1. **[{title}]({signed_url})**")
 
-            # Add the citation number (i) to the card's footer
-            cards_html += f"""
-            <div class="adk-source-card">
-                <div class="adk-source-card-content">{escaped_text_content}</div>
-                <div class="adk-source-card-footer">
-                    <a href="{signed_url}" target="_blank" class="adk-source-card-link" title="{title}"><strong>{i}.</strong> {title}</a>
-                </div>
-            </div>
-            """
+    if len(markdown_parts) <= 1:
+        return ""
+    
+    sources_md="\n" + "\n".join(markdown_parts)
+    full_md = f"<details><summary>Sources</summary>{sources_md}</details>"    
+    return full_md
 
-    return f"""
-    <details class="sources-details">
-        <summary>Sources</summary>
-        <div class="sources-panel-container">
-            <div class="adk-sources-container">{cards_html}</div>
-        </div>
-    </details>
+
+def create_thoughts_markdown(thoughts, is_final=False):
     """
-
-# --- MODIFIED FUNCTION ---
-def create_thoughts_html(thoughts, is_final=False):
-    """
-    Generates an expandable HTML component to display the agent's thoughts.
-
-    If is_final is False (streaming), it shows the last thought in the summary.
-    If is_final is True (finished), it shows a static "expand/collapse" message.
+    Creates a Markdown formatted string for the thoughts.
     """
     if not thoughts:
         return ""
-
-    # Combine all thought parts for reliable parsing.
+    
     full_text_content = "".join(thoughts).strip()
     if not full_text_content:
         return ""
-
-    # Split into individual thoughts.
+        
     individual_thoughts = re.split(r'\n{2,}(?=\*\*)', full_text_content)
     individual_thoughts = [thought.strip() for thought in individual_thoughts if thought.strip()]
+    individual_thoughts = [thought.replace("**\n", "**  ") for thought in individual_thoughts]
+    #TODO check individual thoughts to see why sometimes there are double new line displayed
+
     if not individual_thoughts:
         return ""
 
-    # --- Summary Line Logic ---
-    summary_content_html = ""
     if is_final:
-        # Final state: show static "expand/collapse" text.
-        summary_content_html = """
-        <span class="summary-title">
-            <span class="expand-text">expand to view model thoughts</span>
-            <span class="collapse-text">collapse to hide model thoughts</span>
-        </span>
-        <span class="summary-chevron"></span>
-        """
+        # Final thoughts are presented clearly under a heading
+        thoughts_content_md = "\n\n" + "\n\n".join(individual_thoughts)
+        full_md = f"<details><summary>Model Thoughts</summary>{thoughts_content_md}</details>"
+        return full_md
     else:
-        # Streaming state: show the latest thought.
-        last_thought = individual_thoughts[-1]
-        rendered_last_thought = markdown.markdown(last_thought, extensions=['fenced_code', 'tables'])
-        rendered_last_thought = re.sub(r'^<p>|</p>$', '', rendered_last_thought).strip()
-        chevron_style = "display: none;" if len(individual_thoughts) <= 1 else ""
-        summary_content_html = f"""
-        <div class="summary-title">{rendered_last_thought}</div>
-        <span class="summary-chevron" style="{chevron_style}"></span>
-        """
-
-
-    # --- Full Panel Content ---
-    all_thoughts_html = ""
-    for thought in individual_thoughts:
-        rendered_thought = markdown.markdown(thought, extensions=['fenced_code', 'tables'])
-        all_thoughts_html += f'<div class="thought-item">{rendered_thought}</div>'
-
-
-    return f"""
-    <details class="thoughts-details">
-        <summary class="thoughts-summary">
-            <div class="summary-top-header">
-                <div class="summary-top-left">
-                    <span class="sparkle-icon"></span>
-                    <span class="thinking-text">Thoughts</span>
-                    <span class="loading-dots">
-                        <span></span><span></span><span></span>
-                    </span>
-                </div>
-            </div>
-            <div class="summary-divider"></div>
-            <div class="summary-bottom-line">
-                {summary_content_html}
-            </div>
-        </summary>
-        <div class="thoughts-panel-container">
-            {all_thoughts_html}
-        </div>
-    </details>
-    """
+        # Streaming thoughts show the last thought in a blockquote
+        last_thought_md = "\n\n" + individual_thoughts[-1]
+        full_md = f"<details open><summary>Model Thoughts</summary>{last_thought_md}</details>"
+        return full_md
 
 
 async def chat_with_agent(message, history):
     """
-    Handles the chat interaction, combining thoughts, response, and sources
-    into a single HTML string for the chatbot.
+    Handles chat by yielding a single Markdown string for Gradio to render.
     """
     global session, session_id
     if session is None or session_id is None:
@@ -177,24 +113,19 @@ async def chat_with_agent(message, history):
 
     content = types.Content(role="user", parts=[types.Part(text=message)])
     async for event in runner.run_async(
-        user_id=user_id,
-        session_id=session_id,
-        new_message=content,
-        run_config=RunConfig(
-            streaming_mode=StreamingMode.NONE, ### SSE for streaming
-            response_modalities=["TEXT"]
-        )
+        user_id=user_id, session_id=session_id, new_message=content,
+        run_config=RunConfig(streaming_mode=StreamingMode.SSE, response_modalities=["TEXT"])
     ):
         with open("output.txt", "a", encoding="utf-8") as f:
             f.write(str(event) + "\n##################################################################\n")
-        
+            
         if event.is_final_response():
             thought_parts.clear()
             assistant_response_parts.clear()
-
+            
         if event.grounding_metadata and event.grounding_metadata.grounding_chunks:
             grounding_metadata = event.grounding_metadata
-
+            
         if event.content and event.content.parts:
             for part in event.content.parts:
                 if getattr(part, 'thought', False):
@@ -202,38 +133,43 @@ async def chat_with_agent(message, history):
                 elif hasattr(part, 'text') and part.text:
                     assistant_response_parts.append(part.text)
 
-            # --- Combine all parts into a single HTML string for streaming ---
-            thoughts_html = create_thoughts_html(thought_parts, is_final=False)
+            thoughts_md = create_thoughts_markdown(thought_parts, is_final=False)
             response_so_far = "".join(assistant_response_parts)
-            # Convert markdown for the main response to HTML
-            # response_html = markdown.markdown(response_so_far)
-            
-            # Yield a single combined string
-            yield [gr.HTML(f"{thoughts_html}..."), response_so_far, gr.HTML("")]
+
+            # --- KEY CHANGE (STREAMING) ---
+            # Yield a combined Markdown string.
+            yield f"{thoughts_md}\n\n{response_so_far}"
 
     # --- Combine all parts for the final output ---
     final_response_text = "".join(assistant_response_parts)
-    #final_response_html = markdown.markdown(final_response_text) # Convert final response to HTML
-    sources_html = create_sources_html(grounding_metadata)
-    final_thoughts_html = create_thoughts_html(thought_parts, is_final=True)
-
-    # Yield the final, single HTML string that includes everything
-    final_combined_output = f"{final_thoughts_html}{final_response_text}{sources_html}"
-    yield [gr.HTML(final_thoughts_html), final_response_text, gr.HTML(sources_html)]
+    sources_md = create_sources_markdown(grounding_metadata)
+    final_thoughts_md = create_thoughts_markdown(thought_parts, is_final=True)
+    yield f"{final_thoughts_md}\n\n{final_response_text}\n\n{sources_md}"
 
 
-demo = CustomChatInterface(
-    chat_with_agent,
-    type="messages",
-    examples=["Am inclus RMN in asigurarea medicala?", "Ce beneficii am ca angajat?"],
-    css=CUSTOM_CSS,
-    save_history=True,
-    chatbot= gr.Chatbot(
-        scale=1,
+with gr.Blocks(fill_height=True, fill_width=True, css=CUSTOM_CSS) as demo:
+    def handle_like(data: gr.LikeData):
+        print(f"Feedback Received:")
+        # TODO feedback to big query
+
+    # The standard gr.Chatbot component is sufficient now.
+    chatbot = gr.Chatbot(
         elem_id="chatbot",
         type="messages",
-        ),
-)
+        render_markdown=True,
+        # sanitize_html is True by default, which is safer now that we don't need custom HTML.
+    )
+    chatbot.like(handle_like, None, None)
+
+    # Use the standard gr.ChatInterface
+    gr.ChatInterface(
+        chat_with_agent,
+        type="messages",
+        examples=["Am inclus RMN in asigurarea medicala?", "Ce beneficii am ca angajat?"],
+        save_history=True,
+        flagging_mode="manual",
+        chatbot=chatbot,
+    )
 
 if __name__ == "__main__":
     demo.launch()

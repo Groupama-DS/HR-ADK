@@ -5,5 +5,8 @@ agent/.env
 files
 agent-env
 frontend/.env
+*.txt
+/.env
+test.md
 
 !agent/key/example.json
