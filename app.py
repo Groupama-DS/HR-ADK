@@ -239,15 +239,20 @@ with gr.Blocks(fill_height=True, fill_width=True, css=CUSTOM_CSS) as demo:
         type="messages",
         render_markdown=True,
     )
-    dislike_reason_box = gr.Textbox(
-        label="Please tell us why you disliked this answer:",
-        visible=False,
-        lines=2,
-        placeholder="Enter your reason here..."
-    )
-    submit_reason_btn = gr.Button("Submit Reason", visible=False)
 
-    # --- CHANGE 1: Add a gr.State() component to store the LikeData ---
+    # --- CHANGE 1: Wrap dislike components in a styled, invisible group ---
+    # This group will act as our modal overlay.
+    with gr.Group(elem_id="dislike_overlay", visible=False) as dislike_modal:
+        with gr.Column():
+            dislike_reason_box = gr.Textbox(
+                label="Please tell us why you disliked this answer:",
+                lines=3,
+                placeholder="Enter your reason here...",
+                # No need to set visible=False here, the parent group handles it
+            )
+            submit_reason_btn = gr.Button("Submit Reason")
+
+    # This remains the same
     like_data_state = gr.State(None)
 
     gr.ChatInterface(
@@ -259,21 +264,21 @@ with gr.Blocks(fill_height=True, fill_width=True, css=CUSTOM_CSS) as demo:
         chatbot=chatbot,
     )
 
-    # --- CHANGE 2: Modify the on_like function ---
+    # --- CHANGE 2: Modify the on_like function to control the new overlay ---
     def on_like(data: gr.LikeData, history):
         if data.liked is False:
-            # When disliked, show the input box and button, and store the LikeData
-            return gr.update(visible=True), gr.update(visible=True), data
+            # When disliked, show the entire modal overlay and store the LikeData
+            return gr.update(visible=True), data
         else:
-            # If liked, log it immediately and hide the input box/button
+            # If liked, log it immediately and ensure the overlay is hidden
             handle_like(data, history)
-            return gr.update(visible=False), gr.update(visible=False), None
+            return gr.update(visible=False), None
 
-    # --- CHANGE 3: Add the state component as an output of the .like() event ---
+    # --- CHANGE 3: Update the .like() event to target the new overlay ---
     chatbot.like(
         on_like,
         inputs=[chatbot],
-        outputs=[dislike_reason_box, submit_reason_btn, like_data_state],
+        outputs=[dislike_modal, like_data_state], # Target the group, not individual components
     )
 
     # --- CHANGE 4: Modify the on_submit_reason function and its trigger ---
@@ -294,14 +299,15 @@ with gr.Blocks(fill_height=True, fill_width=True, css=CUSTOM_CSS) as demo:
             "dislike_reason": reason,
         }
         logging.info(f"Feedback log: {log_data['message_id']}/{session_id}/{user_id}", extra={'json_fields': log_data})
-        # Hide and clear the input box and button after submission
-        return gr.update(visible=False, value=""), gr.update(visible=False)
+        # Hide the modal and clear the textbox after submission
+        return gr.update(visible=False), gr.update(value="")
 
     submit_reason_btn.click(
         on_submit_reason,
-        # Pass the reason from the textbox, the data from the state, and the history from the chatbot
+        # Pass the reason from the textbox, the data from the state, and the history
         inputs=[dislike_reason_box, like_data_state, chatbot],
-        outputs=[dislike_reason_box, submit_reason_btn],
+        # Update the modal to be invisible and clear the textbox
+        outputs=[dislike_modal, dislike_reason_box],
     )
 
 if __name__ == "__main__":

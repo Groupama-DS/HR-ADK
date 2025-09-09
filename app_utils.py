@@ -190,4 +190,31 @@ footer {
 .thoughts-details[open] .summary-open { display: inline; }
 .thoughts-panel-container { margin-top: var(--spacing-sm); padding-top: var(--spacing-sm); border-top: 1px solid var(--border-color-primary); }
 .collapse-text { text-align: left; font-size: 0.9em; color: var(--body-text-color-subdued); margin-top: var(--spacing-sm); cursor: pointer; }
+
+
+#dislike_overlay {
+    position: fixed; /* Takes the element out of the normal document flow */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent backdrop */
+    z-index: 1000; /* Ensures it's on top of all other elements */
+    display: flex; /* Uses flexbox to center the content */
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+/* Style the inner column holding the textbox and button */
+#dislike_overlay > .gr-column {
+    background-color: var(--block-background-fill);
+    padding: var(--spacing-xxl);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color-primary);
+    box-shadow: var(--shadow-drop-lg);
+    width: 90%;
+    max-width: 550px; /* Prevents it from being too wide on large screens */
+}
+
 """
