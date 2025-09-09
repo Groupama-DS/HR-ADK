@@ -7,8 +7,48 @@ from google.genai import types
 import re
 from google.adk.agents.run_config import RunConfig
 from google.adk.agents.run_config import StreamingMode
-
+import google.cloud.logging
+import logging
+import uuid
+from datetime import datetime, timezone
 from app_utils import CUSTOM_CSS, generate_download_signed_url_v4, CustomChatInterface
+
+_logging_configured = False
+
+def setup_cloud_logging():
+    """Initializes Cloud Logging safely, preventing duplicate handlers."""
+    global _logging_configured
+    if _logging_configured:
+        return
+
+    try:
+        # Instantiate a client
+        client = google.cloud.logging.Client()
+        
+        # Check if a handler of this type is already attached to the root logger
+        # This is an even more robust check than a simple flag.
+        if any(isinstance(h, google.cloud.logging.handlers.CloudLoggingHandler) for h in logging.root.handlers):
+             print("Cloud Logging handler already attached.")
+             _logging_configured = True
+             return
+
+        # Retrieves a Cloud Logging handler and integrates it with Python's logging module.
+        client.setup_logging()
+        
+        # The name for your logger
+        log_name = "groupama-agent-chat"
+        print("Cloud Logging successfully set up.")
+        
+    except Exception as e:
+        print(f"Could not set up Cloud Logging: {e}. Falling back to standard output logging.")
+        # Fallback to basic logging if Cloud Logging fails to initialize
+        logging.basicConfig(level=logging.INFO)
+        log_name = "local-logger"
+    
+    _logging_configured = True
+
+# --- Call the setup function ---
+setup_cloud_logging()
 
 # Bypass the system proxy for localhost communication.
 os.environ['NO_PROXY'] = '127.0.0.1,localhost'
@@ -138,19 +178,61 @@ async def chat_with_agent(message, history):
 
             # --- KEY CHANGE (STREAMING) ---
             # Yield a combined Markdown string.
-            yield f"{thoughts_md}\n\n{response_so_far}"
+            # yield f"{thoughts_md}\n\n{response_so_far}"
+
+    message_id = len(history) + 1
 
     # --- Combine all parts for the final output ---
     final_response_text = "".join(assistant_response_parts)
     sources_md = create_sources_markdown(grounding_metadata)
     final_thoughts_md = create_thoughts_markdown(thought_parts, is_final=True)
-    yield f"{final_thoughts_md}\n\n{final_response_text}\n\n{sources_md}"
+    response = f"{final_thoughts_md}\n\n{final_response_text}\n\n{sources_md}"
+    
+    log_data = {
+        "message_id": message_id,
+        "session_id": session_id,
+        "user_id": user_id,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "log_type": "conversation",
+        "question": {
+            "content": message,
+            "metadata": None,
+            "options": None,
+            "role": "user"
+        },
+        "answer": {
+            "content": response,
+            "metadata": None,
+            "options": None,
+            "role": "assistant"
+        },
+        "liked": None,  # The initial state is "none"
+        "dislike_reason": None,
+    }
+    # Use the `extra` parameter to pass structured data to the Cloud Logging handler
+    logging.info(f"Conversation log: {message_id}/{session_id}/{user_id}", extra={'json_fields': log_data})
+
+    return response
+
+def handle_like(data: gr.LikeData, history):
+    """
+    Handles like/dislike feedback and logs it.
+    """
+    log_data = {
+        "message_id": data.index,
+        "session_id": session_id,
+        "user_id": user_id,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "log_type": "feedback",
+        "question": history[data.index - 1],
+        "answer": history[data.index],
+        "liked": data.liked,
+        "dislike_reason": None, # You can add a mechanism to collect this if needed
+    }
+    logging.info(f"Feedback log: {log_data['message_id']}/{session_id}/{user_id}", extra={'json_fields': log_data})
 
 
 with gr.Blocks(fill_height=True, fill_width=True, css=CUSTOM_CSS) as demo:
-    def handle_like(data: gr.LikeData):
-        print(f"Feedback Received:")
-        # TODO feedback to big query
 
     # The standard gr.Chatbot component is sufficient now.
     chatbot = gr.Chatbot(
@@ -159,7 +241,7 @@ with gr.Blocks(fill_height=True, fill_width=True, css=CUSTOM_CSS) as demo:
         render_markdown=True,
         # sanitize_html is True by default, which is safer now that we don't need custom HTML.
     )
-    chatbot.like(handle_like, None, None)
+    chatbot.like(handle_like, inputs=[chatbot], outputs=None)
 
     # Use the standard gr.ChatInterface
     gr.ChatInterface(
