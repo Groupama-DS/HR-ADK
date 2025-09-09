@@ -8,5 +8,6 @@ frontend/.env
 *.txt
 /.env
 test.md
+*.csv
 
 !agent/key/example.json

@@ -232,18 +232,24 @@ def handle_like(data: gr.LikeData, history):
     logging.info(f"Feedback log: {log_data['message_id']}/{session_id}/{user_id}", extra={'json_fields': log_data})
 
 
-with gr.Blocks(fill_height=True, fill_width=True, css=CUSTOM_CSS) as demo:
 
-    # The standard gr.Chatbot component is sufficient now.
+with gr.Blocks(fill_height=True, fill_width=True, css=CUSTOM_CSS) as demo:
     chatbot = gr.Chatbot(
         elem_id="chatbot",
         type="messages",
         render_markdown=True,
-        # sanitize_html is True by default, which is safer now that we don't need custom HTML.
     )
-    chatbot.like(handle_like, inputs=[chatbot], outputs=None)
+    dislike_reason_box = gr.Textbox(
+        label="Please tell us why you disliked this answer:",
+        visible=False,
+        lines=2,
+        placeholder="Enter your reason here..."
+    )
+    submit_reason_btn = gr.Button("Submit Reason", visible=False)
 
-    # Use the standard gr.ChatInterface
+    # --- CHANGE 1: Add a gr.State() component to store the LikeData ---
+    like_data_state = gr.State(None)
+
     gr.ChatInterface(
         chat_with_agent,
         type="messages",
@@ -251,6 +257,51 @@ with gr.Blocks(fill_height=True, fill_width=True, css=CUSTOM_CSS) as demo:
         save_history=True,
         flagging_mode="manual",
         chatbot=chatbot,
+    )
+
+    # --- CHANGE 2: Modify the on_like function ---
+    def on_like(data: gr.LikeData, history):
+        if data.liked is False:
+            # When disliked, show the input box and button, and store the LikeData
+            return gr.update(visible=True), gr.update(visible=True), data
+        else:
+            # If liked, log it immediately and hide the input box/button
+            handle_like(data, history)
+            return gr.update(visible=False), gr.update(visible=False), None
+
+    # --- CHANGE 3: Add the state component as an output of the .like() event ---
+    chatbot.like(
+        on_like,
+        inputs=[chatbot],
+        outputs=[dislike_reason_box, submit_reason_btn, like_data_state],
+    )
+
+    # --- CHANGE 4: Modify the on_submit_reason function and its trigger ---
+    def on_submit_reason(reason, data, history):
+        # 'data' now correctly refers to the gr.LikeData object stored in the state
+        log_data = {
+            # Gradio LikeData is 0-indexed, so we add 1 for a message ID
+            "message_id": data.index + 1,
+            "session_id": session_id,
+            "user_id": user_id,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "log_type": "feedback",
+            # The history format is [[user_msg, bot_msg], ...].
+            # data.index points to the correct pair.
+            "question": history[data.index - 1],
+            "answer": history[data.index],
+            "liked": False,
+            "dislike_reason": reason,
+        }
+        logging.info(f"Feedback log: {log_data['message_id']}/{session_id}/{user_id}", extra={'json_fields': log_data})
+        # Hide and clear the input box and button after submission
+        return gr.update(visible=False, value=""), gr.update(visible=False)
+
+    submit_reason_btn.click(
+        on_submit_reason,
+        # Pass the reason from the textbox, the data from the state, and the history from the chatbot
+        inputs=[dislike_reason_box, like_data_state, chatbot],
+        outputs=[dislike_reason_box, submit_reason_btn],
     )
 
 if __name__ == "__main__":
