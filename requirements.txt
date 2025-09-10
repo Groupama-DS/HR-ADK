@@ -1,0 +1,7 @@
+gradio
+google-adk
+google-generativeai
+google-cloud-logging
+google-cloud-storage
+gunicorn
+uvicorn

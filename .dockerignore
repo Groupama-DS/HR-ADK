@@ -12,3 +12,8 @@ test.md
 venv
 !agent/key/example.json
 .gradio
+.git
+.gitignore
+.dockerignore
+submit.sh
+README.md

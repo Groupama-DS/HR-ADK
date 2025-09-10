@@ -5,6 +5,14 @@ import gradio as gr
 from gradio import Chatbot
 from gradio.components.chatbot import MessageDict
 import re
+import datetime
+import os
+
+import google.auth
+import google.auth.transport.requests
+from dotenv import load_dotenv
+load_dotenv()
+
 
 # This helper function remains the same. It identifies your specific HTML output.
 def is_my_html_output(content):
@@ -57,23 +65,53 @@ class CustomChatInterface(gr.ChatInterface):
 def generate_download_signed_url_v4(bucket_name, blob_name):
     """Generates a v4 signed URL for downloading a blob.
 
-    Note that this method requires a service account key file.
+    Note that this method requires a service account key file in a development environment.
+    In a production environment, it uses Application Default Credentials.
     """
-    # bucket_name = 'your-bucket-name'
-    # blob_name = 'your-object-name'
-
     storage_client = storage.Client()
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(blob_name)
+    env = os.environ.get("ENV")
 
-    url = blob.generate_signed_url(
-        version="v4",
-        # This URL is valid for 15 minutes
-        expiration=datetime.timedelta(minutes=15),
-        # Allow GET requests using this URL.
-        method="GET",
-    )
-    return url
+    try:
+        if env == "dev":
+            # In a development environment, use the service account key file.
+            url = blob.generate_signed_url(
+                version="v4",
+                # This URL is valid for 15 minutes
+                expiration=datetime.timedelta(minutes=15),
+                # Allow GET requests using this URL.
+                method="GET",
+            )
+        else:
+            # In a production environment, get application default credentials.
+            credentials, project_id = google.auth.default()
+            auth_request = google.auth.transport.requests.Request()
+            credentials.refresh(auth_request)
+            service_account_email = credentials.service_account_email
+
+            # Generate the signed URL using the IAM API for signing.
+            # This requires the service account to have the "Service Account Token Creator" role.
+            url = blob.generate_signed_url(
+                version="v4",
+                expiration=datetime.timedelta(minutes=15),
+                method="GET",
+                service_account_email=service_account_email,
+                access_token=credentials.token,
+            )
+        return url
+    except Exception as e:
+        # It's a good practice to log the error.
+        print(f"Error generating signed URL: {e}")
+        # Check if the error is due to missing permissions and provide a helpful message.
+        if 'iam.serviceAccounts.signBlob' in str(e):
+            error_message = ("The service account is missing the 'Service Account Token Creator' role. "
+                             "Please grant this role to the service account.")
+            print(error_message)
+            # Depending on your application's needs, you might want to raise the exception
+            # or return an error response.
+            raise  # Or return an error indicator
+        raise
 
 
 CUSTOM_CSS = """
@@ -207,7 +245,7 @@ footer {
 }
 
 /* Style the inner column holding the textbox and button */
-#dislike_overlay > .gr-column {
+#dislike_overlay .gr-column {
     background-color: var(--block-background-fill);
     padding: var(--spacing-xxl);
     border-radius: var(--radius-lg);
@@ -215,6 +253,36 @@ footer {
     box-shadow: var(--shadow-drop-lg);
     width: 90%;
     max-width: 550px; /* Prevents it from being too wide on large screens */
+    position: relative; /* For positioning the close button */
 }
 
+/* Style for the new close button */
+#close_dislike_modal_btn {
+    position: absolute !important;
+    top: 8px !important;
+    right: 8px !important;
+    background: transparent !important;
+    border: none !important;
+    font-size: 0.8rem !important; /* Reduced font size */
+    font-weight: bold; /* Makes the 'X' a bit thicker */
+    color: var(--body-text-color-subdued) !important;
+    padding: 0 !important;
+    line-height: 1 !important; /* Important for vertical alignment */
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+    cursor: pointer;
+    z-index: 10; /* Ensures it's on top of other modal content */
+    
+    /* Use flexbox to perfectly center the 'X' */
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+#close_dislike_modal_btn:hover {
+    color: var(--body-text-color) !important;
+    background: var(--background-fill-secondary) !important;
+    border-radius: 50% !important;
+}
 """
