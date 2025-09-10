@@ -53,8 +53,6 @@ def setup_cloud_logging():
 # --- Call the setup function ---
 setup_cloud_logging()
 
-# Bypass the system proxy for localhost communication.
-os.environ['NO_PROXY'] = '127.0.0.1,localhost'
 session_service = InMemorySessionService()
 runner = Runner(
     app_name="GroupamaAgent",
