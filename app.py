@@ -241,9 +241,6 @@ with gr.Blocks(fill_height=True, fill_width=True, css=CUSTOM_CSS) as demo:
     # This group will act as our modal overlay.
     with gr.Group(elem_id="dislike_overlay", visible=False) as dislike_modal:
         with gr.Column():
-            close_dislike_btn = gr.Button(
-                "X", elem_id="close_dislike_modal_btn"
-            )
             dislike_reason_box = gr.Textbox(
                 label="Ce este gresit?",
                 lines=3,
@@ -310,13 +307,8 @@ with gr.Blocks(fill_height=True, fill_width=True, css=CUSTOM_CSS) as demo:
         outputs=[dislike_modal, dislike_reason_box],
     )
 
-    def close_dislike_modal():
-        return gr.update(visible=False)
-
-    close_dislike_btn.click(close_dislike_modal, outputs=[dislike_modal])
-
 if __name__ == "__main__":
     if os.environ.get("ENV") == "dev":
-        demo.launch(share=True)
+        demo.launch()
     else:
         demo.launch(server_name="0.0.0.0", server_port=8080)

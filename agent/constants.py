@@ -8,7 +8,8 @@ TRAINING_DATASTORE="projects/prj-hackathon-team2/locations/eu/collections/defaul
 SALARIZARE_VANZARI_DATASTORE="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/salarizare-vanzari_1754549885702"
 RELATII_MUNCA_DATASTORE="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/relatii-munca_1754549933330"
 LOGISTICA_DATASTORE="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/logistica_1754549990935"
-BENEFICII_DATASTORE="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/beneficii_1754550084766"
+BENEFICII_DATASTORE="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/beneficii-2_1757671228699"
+#beneficii vechi = "projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/beneficii_1754550084766"
 EVALUAREA_PERFORMANTEI_DATASTORE="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/evaluarea-performantei_1754550133241"
 
 
