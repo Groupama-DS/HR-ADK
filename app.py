@@ -15,6 +15,10 @@ from app_utils import CUSTOM_CSS, generate_download_signed_url_v4, CustomChatInt
 from dotenv import load_dotenv
 load_dotenv()
 
+if os.environ.get("ENV") == "dev":
+    os.environ['NO_PROXY'] = '127.0.0.1,localhost'
+
+
 
 _logging_configured = False
 
@@ -69,12 +73,14 @@ def create_sources_markdown(grounding_metadata):
     """
     if not grounding_metadata or not hasattr(grounding_metadata, 'grounding_chunks') or not grounding_metadata.grounding_chunks:
         return ""
-
     used_chunk_indices = set()
     if grounding_metadata and grounding_metadata.grounding_supports:
         for support in grounding_metadata.grounding_supports:
             for chunk_idx in support.grounding_chunk_indices:
                 used_chunk_indices.add(chunk_idx)
+    else:
+        # If there are no grounding_supports, use all grounding_chunks
+        used_chunk_indices = set(range(len(grounding_metadata.grounding_chunks)))
 
     if not used_chunk_indices:
         return ""
@@ -100,7 +106,7 @@ def create_sources_markdown(grounding_metadata):
             # Format as a Markdown list item with a link and a blockquote for the content
             markdown_parts.append(f"\n1. **[{title}]({signed_url})**")
 
-    if len(markdown_parts) <= 1:
+    if len(markdown_parts) == 0:
         return ""
     
     sources_md="\n" + "\n".join(markdown_parts)
@@ -155,11 +161,10 @@ async def chat_with_agent(message, history):
     content = types.Content(role="user", parts=[types.Part(text=message)])
     async for event in runner.run_async(
         user_id=user_id, session_id=session_id, new_message=content,
-        run_config=RunConfig(streaming_mode=StreamingMode.SSE, response_modalities=["TEXT"])
+        run_config=RunConfig(streaming_mode=StreamingMode.NONE, response_modalities=["TEXT"])
     ):
         with open("output.txt", "a", encoding="utf-8") as f:
             f.write(str(event) + "\n##################################################################\n")
-            
         if event.is_final_response():
             thought_parts.clear()
             assistant_response_parts.clear()
@@ -180,7 +185,6 @@ async def chat_with_agent(message, history):
             # --- KEY CHANGE (STREAMING) ---
             # Yield a combined Markdown string.
             # yield f"{thoughts_md}\n\n{response_so_far}"
-
     message_id = len(history) + 1
 
     # --- Combine all parts for the final output ---
