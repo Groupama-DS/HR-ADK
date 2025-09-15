@@ -1,7 +1,5 @@
-gradio
-google-adk
-google-generativeai
-google-cloud-logging
-google-cloud-storage
-gunicorn
-uvicorn
+gradio==5.44.1
+google-adk==1.13.0
+google-genai==1.23.0
+google-cloud-logging==3.12.1
+google-cloud-storage==2.19.0

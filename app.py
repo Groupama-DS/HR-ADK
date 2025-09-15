@@ -163,8 +163,6 @@ async def chat_with_agent(message, history):
         user_id=user_id, session_id=session_id, new_message=content,
         run_config=RunConfig(streaming_mode=StreamingMode.NONE, response_modalities=["TEXT"])
     ):
-        with open("output.txt", "a", encoding="utf-8") as f:
-            f.write(str(event) + "\n##################################################################\n")
         if event.is_final_response():
             thought_parts.clear()
             assistant_response_parts.clear()

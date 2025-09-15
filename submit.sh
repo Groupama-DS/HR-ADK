@@ -62,10 +62,6 @@ RUNTIME_SERVICE_ACCOUNT_EMAIL="vertex-search@prj-hackathon-team2.iam.gserviceacc
 # NOTE: The Cloud Run service is in `europe-west3`, but Vertex may need a different one.
 VERTEX_AI_LOCATION="europe-west4"
 
-# The GCS bucket your application needs to access for operations like signed URLs.
-GCS_BUCKET_NAME="adk_deploy_bucket"
-
-
 # --- SCRIPT LOGIC (NO NEED TO EDIT BELOW THIS LINE) ---
 
 # Step 0: Ensure Artifact Registry repository exists.
@@ -131,7 +127,7 @@ gcloud run deploy "${SERVICE_NAME}" \
   --service-account "${RUNTIME_SERVICE_ACCOUNT_EMAIL}" \
   --timeout=600s \
   --memory=1Gi \
-  --set-env-vars="GOOGLE_GENAI_USE_VERTEXAI=True,GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${VERTEX_AI_LOCATION},GOOGLE_CLOUD_STORAGE_BUCKET=${GCS_BUCKET_NAME}" \
+  --set-env-vars="GOOGLE_GENAI_USE_VERTEXAI=True,GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${VERTEX_AI_LOCATION}" \
   --allow-unauthenticated
 
 echo
