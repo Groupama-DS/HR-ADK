@@ -17,3 +17,4 @@ venv
 .dockerignore
 submit.sh
 README.md
+logs

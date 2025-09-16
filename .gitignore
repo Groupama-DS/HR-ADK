@@ -12,3 +12,4 @@ test.md
 venv
 !agent/key/example.json
 .gradio
+logs/*.csv
