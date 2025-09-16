@@ -13,3 +13,4 @@ venv
 !agent/key/example.json
 .gradio
 logs/*.csv
+logs/*.html
