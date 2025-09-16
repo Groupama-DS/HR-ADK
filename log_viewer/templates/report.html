@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Logs Report</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f9; margin: 0; padding: 1.25rem; }
+        h1 { text-align: center; color: #444; }
+        .container { max-width: 100%; box-sizing: border-box; background: white; padding: 1.25rem; box-shadow: 0 0 0.6rem rgba(0,0,0,0.1); border-radius: 0.5rem; }
+        form { margin-bottom: 2rem; padding: 1rem; background-color: #f8f8f8; border-radius: 0.5rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: center; }
+        form label { font-weight: bold; }
+        form input[type="datetime-local"], form input[type="checkbox"], form button { padding: 0.5rem; border-radius: 0.3rem; border: 1px solid #ddd; }
+        form button { background-color: #007bff; color: white; cursor: pointer; border: none; font-weight: bold; }
+        form button:hover { background-color: #0056b3; }
+        table { border-collapse: collapse; width: 100%; margin-top: 1.25rem; }
+        th, td { border: 1px solid #ddd; padding: 0.75rem 1rem; text-align: left; vertical-align: top; }
+        th { background-color: #f8f8f8; font-weight: bold; }
+        tr:nth-child(even) { background-color: #fdfdfd; }
+        tr:hover { background-color: #f1f1f1; }
+        .answer-content { width: 45vw; word-wrap: break-word; white-space: pre-wrap; }
+        .answer-content details { border: 1px solid #ccc; border-radius: 0.3rem; padding: 0.6rem; margin-top: 0.6rem; background-color: #f9f9f9; }
+        .answer-content summary { font-weight: bold; cursor: pointer; outline: none; }
+    </style>
+</head>
+<body>
+<div class='container'>
+    <h1>Cloud Run Logs Report</h1>
+    <form method="get">
+        <label for="start_time">Start Time (UTC):</label>
+        <input type="datetime-local" id="start_time" name="start_time" value="{{ start_time }}">
+        <label for="end_time">End Time (UTC):</label>
+        <input type="datetime-local" id="end_time" name="end_time" value="{{ end_time }}">
+        <label for="feedback">Feedback:</label>
+        <input type="checkbox" id="feedback" name="feedback" checked>
+        <label for="conversation">Conversation:</label>
+        <input type="checkbox" id="conversation" name="conversation">
+        <button type="submit">Rerun</button>
+    </form>
+    <table>
+        <thead><tr>
+            <th>Timestamp</th>
+            <th>Log Type</th>
+            <th>Question</th>
+            <th>Answer</th>
+            <th>Liked</th>
+            <th>Dislike Reason</th>
+            <th>Message ID</th>
+            <th>User ID</th>
+            <th>Session ID</th>
+        </tr></thead>
+        <tbody>
+            {{ table_body | safe }}
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

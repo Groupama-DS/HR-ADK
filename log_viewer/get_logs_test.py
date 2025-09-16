@@ -178,8 +178,8 @@ if __name__ == '__main__':
     # --- Configuration ---
     PROJECT_ID = "prj-test-hrminds"  # Your Google Cloud project ID
     SERVICE_NAME = "hr-chatbot-service"  # Your Cloud Run service name
-    OUTPUT_CSV_FILE = "logs/logs_test.csv"
-    OUTPUT_HTML_FILE = "logs/logs_report.html"
+    OUTPUT_CSV_FILE = "log_viewer/outputs/logs_test.csv"
+    OUTPUT_HTML_FILE = "logs_viewer/outputs/logs_report.html"
 
     # --- Time Filter ---
     # Fetch logs for the last 24 hours.

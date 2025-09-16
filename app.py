@@ -11,14 +11,17 @@ import google.cloud.logging
 import logging
 import uuid
 from datetime import datetime, timezone
-from app_utils import CUSTOM_CSS, generate_download_signed_url_v4, CustomChatInterface
+from app_utils import CUSTOM_CSS, generate_download_signed_url_v4
 from dotenv import load_dotenv
 load_dotenv()
 
 if os.environ.get("ENV") == "dev":
     os.environ['NO_PROXY'] = '127.0.0.1,localhost'
 
-
+# TODO list:
+# instance always up
+# translate app (there are english words)
+# 
 
 _logging_configured = False
 
@@ -110,7 +113,7 @@ def create_sources_markdown(grounding_metadata):
         return ""
     
     sources_md="\n" + "\n".join(markdown_parts)
-    full_md = f"<details><summary>Sources</summary>{sources_md}</details>"    
+    full_md = f"<details><summary>Surse</summary>{sources_md}</details>"    
     return full_md
 
 
@@ -136,12 +139,12 @@ def create_thoughts_markdown(thoughts, is_final=False):
     if is_final:
         # Final thoughts are presented clearly under a heading
         thoughts_content_md = "\n\n" + "\n\n".join(individual_thoughts)
-        full_md = f"<details><summary>Model Thoughts</summary>{thoughts_content_md}</details>"
+        full_md = f"<details><summary>Proces de Gândire</summary>{thoughts_content_md}</details>"
         return full_md
     else:
         # Streaming thoughts show the last thought in a blockquote
         last_thought_md = "\n\n" + individual_thoughts[-1]
-        full_md = f"<details open><summary>Model Thoughts</summary>{last_thought_md}</details>"
+        full_md = f"<details open><summary>Proces de Gândire</summary>{last_thought_md}</details>"
         return full_md
 
 
@@ -232,7 +235,7 @@ def handle_like(data: gr.LikeData, history):
 
 
 
-with gr.Blocks(fill_height=True, fill_width=True, css=CUSTOM_CSS) as demo:
+with gr.Blocks(fill_height=True, fill_width=True, css=CUSTOM_CSS, title="Hr Chatbot") as demo:
     chatbot = gr.Chatbot(
         elem_id="chatbot",
         type="messages",
