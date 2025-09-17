@@ -21,7 +21,7 @@ if os.environ.get("ENV") == "dev":
 # TODO list:
 # instance always up
 # translate app (there are english words)
-# 
+#
 
 _logging_configured = False
 
@@ -36,7 +36,6 @@ def setup_cloud_logging():
         client = google.cloud.logging.Client()
         
         # Check if a handler of this type is already attached to the root logger
-        # This is an even more robust check than a simple flag.
         if any(isinstance(h, google.cloud.logging.handlers.CloudLoggingHandler) for h in logging.root.handlers):
              print("Cloud Logging handler already attached.")
              _logging_configured = True
@@ -45,19 +44,16 @@ def setup_cloud_logging():
         # Retrieves a Cloud Logging handler and integrates it with Python's logging module.
         client.setup_logging()
         
-        # The name for your logger
         log_name = "groupama-agent-chat"
         print("Cloud Logging successfully set up.")
         
     except Exception as e:
         print(f"Could not set up Cloud Logging: {e}. Falling back to standard output logging.")
-        # Fallback to basic logging if Cloud Logging fails to initialize
         logging.basicConfig(level=logging.INFO)
         log_name = "local-logger"
     
     _logging_configured = True
 
-# --- Call the setup function ---
 setup_cloud_logging()
 
 session_service = InMemorySessionService()
@@ -67,8 +63,6 @@ runner = Runner(
     session_service=session_service,
 )
 user_id = "demo_user"
-session = None
-session_id = None
 
 def create_sources_markdown(grounding_metadata):
     """
@@ -82,7 +76,6 @@ def create_sources_markdown(grounding_metadata):
             for chunk_idx in support.grounding_chunk_indices:
                 used_chunk_indices.add(chunk_idx)
     else:
-        # If there are no grounding_supports, use all grounding_chunks
         used_chunk_indices = set(range(len(grounding_metadata.grounding_chunks)))
 
     if not used_chunk_indices:
@@ -106,7 +99,6 @@ def create_sources_markdown(grounding_metadata):
                 except Exception as e:
                     print(f"Error generating signed URL for {uri}: {e}")
             
-            # Format as a Markdown list item with a link and a blockquote for the content
             markdown_parts.append(f"\n1. **[{title}]({signed_url})**")
 
     if len(markdown_parts) == 0:
@@ -131,31 +123,28 @@ def create_thoughts_markdown(thoughts, is_final=False):
     individual_thoughts = re.split(r'\n{2,}(?=\*\*)', full_text_content)
     individual_thoughts = [thought.strip() for thought in individual_thoughts if thought.strip()]
     individual_thoughts = [thought.replace("**\n", "**  ") for thought in individual_thoughts]
-    #TODO check individual thoughts to see why sometimes there are double new line displayed
 
     if not individual_thoughts:
         return ""
 
     if is_final:
-        # Final thoughts are presented clearly under a heading
         thoughts_content_md = "\n\n" + "\n\n".join(individual_thoughts)
         full_md = f"<details><summary>Proces de Gândire</summary>{thoughts_content_md}</details>"
         return full_md
     else:
-        # Streaming thoughts show the last thought in a blockquote
         last_thought_md = "\n\n" + individual_thoughts[-1]
         full_md = f"<details open><summary>Proces de Gândire</summary>{last_thought_md}</details>"
         return full_md
 
 
-async def chat_with_agent(message, history):
+async def chat_with_agent(message, history, active_session_id):
     """
     Handles chat by yielding a single Markdown string for Gradio to render.
     """
-    global session, session_id
-    if session is None or session_id is None:
+    if not history or active_session_id is None:
         session = await session_service.create_session(app_name="GroupamaAgent", user_id=user_id)
-        session_id = session.id
+        active_session_id = session.id
+        print(f"New session: {active_session_id}")
 
     assistant_response_parts = []
     thought_parts = []
@@ -163,7 +152,7 @@ async def chat_with_agent(message, history):
 
     content = types.Content(role="user", parts=[types.Part(text=message)])
     async for event in runner.run_async(
-        user_id=user_id, session_id=session_id, new_message=content,
+        user_id=user_id, session_id=active_session_id, new_message=content,
         run_config=RunConfig(streaming_mode=StreamingMode.NONE, response_modalities=["TEXT"])
     ):
         if event.is_final_response():
@@ -183,20 +172,17 @@ async def chat_with_agent(message, history):
             thoughts_md = create_thoughts_markdown(thought_parts, is_final=False)
             response_so_far = "".join(assistant_response_parts)
 
-            # --- KEY CHANGE (STREAMING) ---
-            # Yield a combined Markdown string.
-            # yield f"{thoughts_md}\n\n{response_so_far}"
     message_id = len(history) + 1
 
-    # --- Combine all parts for the final output ---
     final_response_text = "".join(assistant_response_parts)
     sources_md = create_sources_markdown(grounding_metadata)
     final_thoughts_md = create_thoughts_markdown(thought_parts, is_final=True)
-    response = f"{final_thoughts_md}\n\n{final_response_text}\n\n{sources_md}"
+    # IMPORTANT: We append the session ID to the response content so we can retrieve it later
+    response = f"{final_thoughts_md}\n\n{final_response_text}\n\n{sources_md}\n\n{active_session_id}"
     
     log_data = {
         "message_id": message_id,
-        "session_id": session_id,
+        "session_id": active_session_id,
         "user_id": user_id,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "log_type": "conversation",
@@ -208,107 +194,133 @@ async def chat_with_agent(message, history):
             "content": response,
             "role": "assistant"
         },
-        "liked": None,  # The initial state is "none"
+        "liked": None,
         "dislike_reason": None,
     }
-    # Use the `extra` parameter to pass structured data to the Cloud Logging handler
-    logging.info(f"Conversation log: {message_id}/{session_id}/{user_id}", extra={'json_fields': log_data})
+    logging.info(f"Conversation log: {message_id}/{active_session_id}/{user_id}", extra={'json_fields': log_data})
 
-    return response
+    return response, active_session_id
 
-def handle_like(data: gr.LikeData, history):
-    """
-    Handles like/dislike feedback and logs it.
-    """
-    log_data = {
-        "message_id": data.index,
-        "session_id": session_id,
-        "user_id": user_id,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "log_type": "feedback",
-        "question": history[data.index - 1],
-        "answer": history[data.index],
-        "liked": data.liked,
-        "dislike_reason": None, # You can add a mechanism to collect this if needed
-    }
-    logging.info(f"Feedback log: {log_data['message_id']}/{session_id}/{user_id}", extra={'json_fields': log_data})
-
-
+# --- MODIFIED: This function is no longer needed as a separate function ---
+# def handle_like(data: gr.LikeData, history):
+#     ...
 
 with gr.Blocks(fill_height=True, fill_width=True, css=CUSTOM_CSS, title="Hr Chatbot") as demo:
+    active_session_state = gr.State(None)
     chatbot = gr.Chatbot(
         elem_id="chatbot",
         type="messages",
         render_markdown=True,
     )
 
-    # --- CHANGE 1: Wrap dislike components in a styled, invisible group ---
-    # This group will act as our modal overlay.
     with gr.Group(elem_id="dislike_overlay", visible=False) as dislike_modal:
         with gr.Column():
             dislike_reason_box = gr.Textbox(
                 label="Ce este gresit?",
                 lines=3,
                 placeholder="Enter your reason here...",
-                # No need to set visible=False here, the parent group handles it
             )
             submit_reason_btn = gr.Button("Submit Reason")
 
-    # This remains the same
     like_data_state = gr.State(None)
 
     gr.ChatInterface(
         chat_with_agent,
         type="messages",
-        examples=["Am inclus RMN in asigurarea medicala?", "Ce beneficii am ca angajat?"],
+        examples=[["Am inclus RMN in asigurarea medicala?", None], ["Ce beneficii am ca angajat?", None]],
         save_history=True,
         flagging_mode="manual",
         chatbot=chatbot,
+        additional_inputs=[active_session_state],
+        additional_outputs=[active_session_state],
     )
 
-    # --- CHANGE 2: Modify the on_like function to control the new overlay ---
-    def on_like(data: gr.LikeData, history):
+    # --- NEW FUNCTION TO HANDLE HISTORY LOADING ---
+    def update_session_on_history_load(history):
+        """
+        Parses the loaded chat history to find the session ID from the last assistant message.
+        """
+        if not history:
+            return None  # It's a new or cleared chat
+
+        last_assistant_message_content = None
+        # Iterate backwards through history to find the last message from the assistant
+        for message in reversed(history):
+            if message.get("role") == "assistant":
+                last_assistant_message_content = message.get("content")
+                break
+
+        if not last_assistant_message_content:
+            return None # No assistant message found, might be a new chat
+
+        # Use regex to find a UUID-like string at the very end of the content
+        match = re.search(r'([a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12})\s*$', last_assistant_message_content, re.IGNORECASE)
+        
+        if match:
+            session_id = match.group(1)
+            print(f"History loaded. Switching to ADK session: {session_id}")
+            return session_id
+        else:
+            print("Could not find a valid session ID in the last message.")
+            return None # Fallback to creating a new session
+
+    # --- NEW EVENT LISTENER ---
+    # This event updates the session state whenever the chatbot's value changes
+    # (e.g., when a saved conversation is loaded).
+    chatbot.change(
+        fn=update_session_on_history_load,
+        inputs=[chatbot],
+        outputs=[active_session_state],
+        queue=False # This can run outside the queue for responsiveness
+    )
+
+    # --- MODIFIED: on_like function now accepts session state ---
+    def on_like(data: gr.LikeData, history, current_session_id):
         if data.liked is False:
-            # When disliked, show the entire modal overlay and store the LikeData
             return gr.update(visible=True), data
         else:
             # If liked, log it immediately and ensure the overlay is hidden
-            handle_like(data, history)
+            log_data = {
+                "message_id": data.index + 1,
+                "session_id": current_session_id,
+                "user_id": user_id,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "log_type": "feedback",
+                "question": history[data.index][0],
+                "answer": history[data.index][1],
+                "liked": data.liked,
+                "dislike_reason": None,
+            }
+            logging.info(f"Feedback log: {log_data['message_id']}/{current_session_id}/{user_id}", extra={'json_fields': log_data})
             return gr.update(visible=False), None
 
-    # --- CHANGE 3: Update the .like() event to target the new overlay ---
+    # --- MODIFIED: .like() event now passes session state as input ---
     chatbot.like(
         on_like,
-        inputs=[chatbot],
-        outputs=[dislike_modal, like_data_state], # Target the group, not individual components
+        inputs=[chatbot, active_session_state],
+        outputs=[dislike_modal, like_data_state],
     )
 
-    # --- CHANGE 4: Modify the on_submit_reason function and its trigger ---
-    def on_submit_reason(reason, data, history):
-        # 'data' now correctly refers to the gr.LikeData object stored in the state
+    # --- MODIFIED: on_submit_reason function now accepts session state ---
+    def on_submit_reason(reason, data, history, current_session_id):
         log_data = {
-            # Gradio LikeData is 0-indexed, so we add 1 for a message ID
             "message_id": data.index + 1,
-            "session_id": session_id,
+            "session_id": current_session_id,
             "user_id": user_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "log_type": "feedback",
-            # The history format is [[user_msg, bot_msg], ...].
-            # data.index points to the correct pair.
-            "question": history[data.index - 1],
-            "answer": history[data.index],
+            "question": history[data.index][0],
+            "answer": history[data.index][1],
             "liked": False,
             "dislike_reason": reason,
         }
-        logging.info(f"Feedback log: {log_data['message_id']}/{session_id}/{user_id}", extra={'json_fields': log_data})
-        # Hide the modal and clear the textbox after submission
+        logging.info(f"Feedback log: {log_data['message_id']}/{current_session_id}/{user_id}", extra={'json_fields': log_data})
         return gr.update(visible=False), gr.update(value="")
 
+    # --- MODIFIED: .click() event now passes session state as input ---
     submit_reason_btn.click(
         on_submit_reason,
-        # Pass the reason from the textbox, the data from the state, and the history
-        inputs=[dislike_reason_box, like_data_state, chatbot],
-        # Update the modal to be invisible and clear the textbox
+        inputs=[dislike_reason_box, like_data_state, chatbot, active_session_state],
         outputs=[dislike_modal, dislike_reason_box],
     )
 

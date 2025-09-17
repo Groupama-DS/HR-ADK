@@ -32,9 +32,9 @@
         <label for="end_time">End Time (UTC):</label>
         <input type="datetime-local" id="end_time" name="end_time" value="{{ end_time }}">
         <label for="feedback">Feedback:</label>
-        <input type="checkbox" id="feedback" name="feedback" checked>
+        <input type="checkbox" id="feedback" name="feedback" {% if feedback %}checked{% endif %}>
         <label for="conversation">Conversation:</label>
-        <input type="checkbox" id="conversation" name="conversation" checked>
+        <input type="checkbox" id="conversation" name="conversation" {% if conversation %}checked{% endif %} >
         <button type="submit">Rerun</button>
     </form>
     <table>
