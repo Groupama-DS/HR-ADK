@@ -182,29 +182,42 @@ footer {
 
 
 #dislike_overlay {
-    position: fixed; /* Takes the element out of the normal document flow */
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent backdrop */
-    z-index: 1000; /* Ensures it's on top of all other elements */
-    display: flex; /* Uses flexbox to center the content */
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    display: flex;
     justify-content: center;
     align-items: center;
     padding: 20px;
 }
 
-/* Style the inner column holding the textbox and button */
-#dislike_overlay .gr-column {
+/*
+  2. THIS IS THE MOST IMPORTANT PART.
+  We target the intermediate '.styler' div that Gradio inserts inside our Group.
+  This element is the direct child of the flex container, so this is where we
+  must set the desired size of the modal box itself.
+*/
+#dislike_overlay > .styler {
+    width: 90%;                  /* Use a responsive percentage */
+    max-width: 400px; !important; /* Set your desired max-width here */
+    box-sizing: border-box;
+}
+
+/*
+  3. Now, we just tell the '.column' inside to fill the space
+  we just created in the '.styler' parent.
+*/
+#dislike_overlay .column {
+    width: 100% !important; /* Fill the parent container */
     background-color: var(--block-background-fill);
-    padding: var(--spacing-xxl);
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-color-primary);
     box-shadow: var(--shadow-drop-lg);
-    width: 90%;
-    max-width: 550px; /* Prevents it from being too wide on large screens */
-    position: relative; /* For positioning the close button */
+    position: relative;
 }
 
 /* Style for the new close button */

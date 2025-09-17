@@ -179,7 +179,7 @@ async def chat_with_agent(message, history, active_session_id, session_history):
     final_response_text = "".join(assistant_response_parts)
     sources_md = create_sources_markdown(grounding_metadata)
     final_thoughts_md = create_thoughts_markdown(thought_parts, is_final=True)
-    response = f"{final_thoughts_md}\n\n{final_response_text}\n\n{sources_md}\n\n{active_session_id}"
+    response = f"{final_thoughts_md}\n\n{final_response_text}\n\n{sources_md}"
     
     log_data = {
         "message_id": message_id,
@@ -215,9 +215,9 @@ with gr.Blocks(fill_height=True, fill_width=True, css=CUSTOM_CSS, title="Hr Chat
     with gr.Group(elem_id="dislike_overlay", visible=False) as dislike_modal:
         with gr.Column():
             dislike_reason_box = gr.Textbox(
-                label="Ce este gresit?",
-                lines=3,
-                placeholder="Te rog să spui care este raspunsul corect și pe ce document se bazează.",
+                label="Ce este greșit?",
+                lines=5,
+                placeholder="Te rog să spui care este răspunsul corect și pe ce document se bazează.",
                 # No need to set visible=False here, the parent group handles it
             )
             submit_reason_btn = gr.Button("Submit Reason")
