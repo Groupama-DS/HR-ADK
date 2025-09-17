@@ -279,7 +279,6 @@ with gr.Blocks(fill_height=True, fill_width=True, css=CUSTOM_CSS, title="Hr Chat
     # --- Updated Feedback Logic ---
 
     def handle_like(data: gr.LikeData, history, session_id):
-        print("like")
         """
         Handles like/dislike feedback and logs it.
         """
@@ -297,7 +296,6 @@ with gr.Blocks(fill_height=True, fill_width=True, css=CUSTOM_CSS, title="Hr Chat
         logging.info(f"Feedback log: {log_data['message_id']}/{session_id}/{user_id}", extra={'json_fields': log_data})
 
     def on_like(data: gr.LikeData, history, current_session_id):
-        print("feedback")
         """Handles the like/dislike user action."""
         if not current_session_id:
             print("Error: Could not log feedback because no active session ID was found.")
