@@ -35,15 +35,15 @@ def setup_cloud_logging():
     try:
         client = google.cloud.logging.Client()
         if any(isinstance(h, google.cloud.logging.handlers.CloudLoggingHandler) for h in logging.root.handlers):
-             print("Cloud Logging handler already attached.")
+             logging.info("Cloud Logging handler already attached.")
              _logging_configured = True
              return
         client.setup_logging()
         log_name = "groupama-agent-chat"
-        print("Cloud Logging successfully set up.")
+        logging.info("Cloud Logging successfully set up.")
         
     except Exception as e:
-        print(f"Could not set up Cloud Logging: {e}. Falling back to standard output logging.")
+        logging.error(f"Could not set up Cloud Logging: {e}. Falling back to standard output logging.")
         logging.basicConfig(level=logging.INFO)
         log_name = "local-logger"
     
@@ -90,7 +90,7 @@ def create_sources_markdown(grounding_metadata):
                         bucket_name, blob_name = path_parts
                         signed_url = generate_download_signed_url_v4(bucket_name, blob_name)
                 except Exception as e:
-                    print(f"Error generating signed URL for {uri}: {e}")
+                    logging.error(f"Error generating signed URL for {uri}: %s", e)
             
             markdown_parts.append(f"\n1. **[{title}]({signed_url})**")
 
@@ -136,17 +136,17 @@ async def chat_with_agent(message, history, active_session_id, session_history):
     if is_new_conversation:
         session = await session_service.create_session(app_name="GroupamaAgent", user_id=user_id)
         active_session_id = session.id
-        print(f"New session created: {active_session_id}")
+        logging.info(f"New session created: {active_session_id}")
         session_history.insert(0, active_session_id)
     else:
         # This can happen if the user clicks an old chat without a corresponding session in our history
         if not active_session_id:
-            print("Warning: No active session ID found for existing chat. Creating a new one.")
+            logging.warning("No active session ID found for existing chat. Creating a new one.")
             session = await session_service.create_session(app_name="GroupamaAgent", user_id=user_id)
             active_session_id = session.id
             session_history.insert(0, active_session_id) # Or you might want to handle this differently
         else:
-            print(f"Continuing session: {active_session_id}")
+            logging.info(f"Continuing session: {active_session_id}")
 
     assistant_response_parts = []
     thought_parts = []
@@ -242,9 +242,9 @@ with gr.Blocks(fill_height=True, fill_width=True, css=CUSTOM_CSS, title="Hr Chat
         clicked_index = evt.index
         if session_history and 0 <= clicked_index < len(session_history):
             session_id_to_load = session_history[clicked_index]
-            print(f"Loading session ID: {session_id_to_load} from history index: {clicked_index}")
+            logging.info(f"Loading session ID: {session_id_to_load} from history index: {clicked_index}")
             return session_id_to_load
-        print(f"Warning: Could not find session ID for history index {clicked_index}. Starting new session.")
+        logging.warning(f"Warning: Could not find session ID for history index {clicked_index}. Starting new session.")
         return None
 
     chat_interface.chat_history_dataset.select(
@@ -256,7 +256,7 @@ with gr.Blocks(fill_height=True, fill_width=True, css=CUSTOM_CSS, title="Hr Chat
 
     def start_new_chat():
         """Clears the active session ID when 'New chat' is clicked."""
-        print("Starting new chat, clearing active session.")
+        logging.info("Starting new chat, clearing active session.")
         return None
 
     chat_interface.new_chat_button.click(
@@ -266,7 +266,7 @@ with gr.Blocks(fill_height=True, fill_width=True, css=CUSTOM_CSS, title="Hr Chat
     def delete_session_from_history(conversation_id_index, session_history):
         """Removes session ID when a conversation is deleted."""
         if conversation_id_index is not None and session_history and 0 <= conversation_id_index < len(session_history):
-            print(f"Deleting session ID at index: {conversation_id_index}")
+            logging.info(f"Deleting session ID at index: {conversation_id_index}")
             session_history.pop(conversation_id_index)
         return session_history
 
@@ -298,7 +298,7 @@ with gr.Blocks(fill_height=True, fill_width=True, css=CUSTOM_CSS, title="Hr Chat
     def on_like(data: gr.LikeData, history, current_session_id):
         """Handles the like/dislike user action."""
         if not current_session_id:
-            print("Error: Could not log feedback because no active session ID was found.")
+            logging.error("Error: Could not log feedback because no active session ID was found.")
             return gr.update(visible=False), None # Hide modal and do nothing
         if data.liked is False:
             return gr.update(visible=True), (data, current_session_id)
