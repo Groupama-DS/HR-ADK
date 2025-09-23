@@ -16,7 +16,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-if os.environ.get("ENV") == "dev":
+ENV = os.environ.get("ENV")
+if os.environ.get("DEBUG") == "True":
+    DEBUG = True
+else:
+    DEBUG = False
+
+
+
+if ENV == "local":
     os.environ['NO_PROXY'] = '127.0.0.1,localhost'
 
 # TODO list:
@@ -180,6 +188,8 @@ async def chat_with_agent(message, history, active_session_id, session_history):
     sources_md = create_sources_markdown(grounding_metadata)
     final_thoughts_md = create_thoughts_markdown(thought_parts, is_final=True)
     response = f"{final_thoughts_md}\n\n{final_response_text}\n\n{sources_md}"
+    if DEBUG == True:
+        response += f"\n\n{active_session_id}"
     
     log_data = {
         "message_id": message_id,
@@ -341,7 +351,7 @@ with gr.Blocks(fill_height=True, fill_width=True, css=CUSTOM_CSS, title="Hr Chat
     )
 
 if __name__ == "__main__":
-    if os.environ.get("ENV") == "dev":
+    if ENV=="local":
         demo.launch()
     else:
         demo.launch(server_name="0.0.0.0", server_port=8080)
