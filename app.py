@@ -329,7 +329,7 @@ with gr.Blocks(fill_height=True, fill_width=True, css=CUSTOM_CSS, title="Hr Chat
         message_id = data.index + 1
         log_data = {
             # Gradio LikeData is 0-indexed, so we add 1 for a message ID
-            "message_id": data.index + 1,
+            "message_id": data.index,
             "session_id": session_id,
             "user_id": user_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
