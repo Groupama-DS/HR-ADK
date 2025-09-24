@@ -165,6 +165,10 @@ async def chat_with_agent(message, history, active_session_id, session_history):
         user_id=user_id, session_id=active_session_id, new_message=content,
         run_config=RunConfig(streaming_mode=StreamingMode.NONE, response_modalities=["TEXT"])
     ):
+        if ENV == "local":
+            with open("output.txt", "a") as f:
+                f.write(f"Event: {event}\n")
+
         if event.is_final_response():
             thought_parts.clear()
             assistant_response_parts.clear()
