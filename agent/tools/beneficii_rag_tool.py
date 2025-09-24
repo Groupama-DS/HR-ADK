@@ -1,5 +1,5 @@
 from .custom_search_tool import CustomVertexAiSearchTool
-from ..constants import PROJECT_ID, LOCATION, BENEFICII_ENGINE_ID, BENEFICII_DATASTORE, FULL_ENGINE_ID
+from ..constants import PROJECT_ID, LOCATION, BENEFICII_DATASTORE, FULL_ENGINE_ID
 from google.adk.tools import VertexAiSearchTool
 from google.genai.types import VertexAISearchDataStoreSpec
 
