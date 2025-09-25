@@ -43,6 +43,15 @@ planner = BuiltInPlanner(thinking_config=thinking_config)
 root_agent = LlmAgent(
     name="menu_agent",
     model=MODEL,
+    generate_content_config=types.GenerateContentConfig(
+        temperature=0.1,
+        safety_settings=[
+            types.SafetySetting(
+                category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                threshold=types.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+            )
+        ]
+    ),
     description=(
         "Un asistent virtual pentru angajați, capabil să răspundă la întrebări specifice prin căutarea"
         " în documentația internă a companiei. Utilizează unelte de căutare dedicate pentru a oferi informații despre "

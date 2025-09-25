@@ -25,7 +25,7 @@ def generate_download_signed_url_v4(bucket_name, blob_name):
     env = os.environ.get("ENV")
 
     try:
-        if env == "dev":
+        if env == "local":
             # In a development environment, use the service account key file.
             url = blob.generate_signed_url(
                 version="v4",
