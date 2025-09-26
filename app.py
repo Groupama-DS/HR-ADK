@@ -69,26 +69,26 @@ user_id = "demo_user"
 
 def create_sources_markdown(grounding_metadata):
     """Creates a Markdown formatted string for the sources."""
-    if not grounding_metadata or not hasattr(grounding_metadata, 'grounding_chunks') or not grounding_metadata.grounding_chunks:
+    if not grounding_metadata or not grounding_metadata.get('grounding_chunks'):
         return ""
     used_chunk_indices = set()
-    if grounding_metadata and grounding_metadata.grounding_supports:
-        for support in grounding_metadata.grounding_supports:
-            for chunk_idx in support.grounding_chunk_indices:
+    if grounding_metadata and grounding_metadata.get('grounding_supports'):
+        for support in grounding_metadata['grounding_supports']:
+            for chunk_idx in support["grounding_chunk_indices"]:
                 used_chunk_indices.add(chunk_idx)
     else:
-        used_chunk_indices = set(range(len(grounding_metadata.grounding_chunks)))
+        used_chunk_indices = set(range(len(grounding_metadata['grounding_chunks'])))
 
     if not used_chunk_indices:
         return ""
 
     markdown_parts = []
-    for i, chunk in enumerate(grounding_metadata.grounding_chunks):
+    for i, chunk in enumerate(grounding_metadata['grounding_chunks']):
         if i in used_chunk_indices:
-            retrieved_context = chunk.retrieved_context
-            title = getattr(retrieved_context, 'title', 'Source Document')
-            uri = getattr(retrieved_context, 'uri', '#')
-            text_content = getattr(retrieved_context, 'text', 'No content available.')
+            retrieved_context = chunk['retrieved_context']
+            title = retrieved_context.get('title', 'Source Document')
+            uri = retrieved_context.get('uri', '#')
+            text_content = retrieved_context.get('text', 'No content available.')
             
             signed_url = "#"
             if uri.startswith("gs://"):
@@ -170,16 +170,26 @@ async def chat_with_agent(message, history, active_session_id, session_history):
                 f.write(f"Event: {event}\n")
 
         if event.is_final_response():
-            thought_parts.clear()
+            # thought_parts.clear()
             assistant_response_parts.clear()
+
+        # Check for grounding metadata directly on the event first.
         if event.grounding_metadata and event.grounding_metadata.grounding_chunks:
             grounding_metadata = event.grounding_metadata
+        # If not found, check if the state was updated with it in this event.
+        elif event.actions and event.actions.state_delta and 'last_grounding_metadata' in event.actions.state_delta:
+            grounding_metadata = event.actions.state_delta['last_grounding_metadata']
+
         if event.content and event.content.parts:
             for part in event.content.parts:
                 if getattr(part, 'thought', False):
                     thought_parts.append(part.text)
                 elif hasattr(part, 'text') and part.text:
                     assistant_response_parts.append(part.text)
+                elif hasattr(part, 'function_response') and part.function_response:
+                    # This is where the final result from a sub-agent is found
+                    if 'result' in part.function_response.response:
+                        assistant_response_parts.append(part.function_response.response['result'])
 
             thoughts_md = create_thoughts_markdown(thought_parts, is_final=False)
             response_so_far = "".join(assistant_response_parts)

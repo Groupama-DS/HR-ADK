@@ -4,13 +4,13 @@ from google.adk.planners import BuiltInPlanner
 from google.genai import types
 
 import os
-# from.sub_agents.ami.ami_agent import ami_agent
-# from.sub_agents.training.training_agent import training_agent
-# from.sub_agents.salarizare_vanzari.salarizare_vanzari_agent import salarizare_vanzari_agent
-# from.sub_agents.relatii_munca.relatii_munca_agent import relatii_munca_agent
-# from.sub_agents.logistica.logistica_agent import logistica_agent
-# from.sub_agents.beneficii.beneficii_agent import beneficii_agent
-# from.sub_agents.evaluarea_performantei.evaluarea_performantei_agent import evaluarea_performantei_agent
+from.sub_agents.ami.ami_agent import ami_agent
+from.sub_agents.training.training_agent import training_agent
+from.sub_agents.salarizare_vanzari.salarizare_vanzari_agent import salarizare_vanzari_agent
+from.sub_agents.relatii_munca.relatii_munca_agent import relatii_munca_agent
+from.sub_agents.logistica.logistica_agent import logistica_agent
+from.sub_agents.beneficii.beneficii_agent import beneficii_agent
+from.sub_agents.evaluarea_performantei.evaluarea_performantei_agent import evaluarea_performantei_agent
 from dotenv import load_dotenv
 from agent.constants import MODEL
 
@@ -61,13 +61,12 @@ root_agent = LlmAgent(
     output_key="menu_output",
     planner=planner,
     tools=[
-        ami_datastore_tool,
-        beneficii_datastore_tool,
-        evaluarea_performantei_datastore_tool,
-        logistica_datastore_tool,
-        relatii_munca_datastore_tool,
-        salarizare_vanzari_datastore_tool,
-        training_datastore_tool,
+        AgentTool(agent=ami_agent, skip_summarization=True),
+        AgentTool(agent=beneficii_agent, skip_summarization=True),
+        AgentTool(agent=evaluarea_performantei_agent, skip_summarization=True),
+        AgentTool(agent=logistica_agent, skip_summarization=True),
+        AgentTool(agent=relatii_munca_agent, skip_summarization=True),
+        AgentTool(agent=salarizare_vanzari_agent, skip_summarization=True), 
+        AgentTool(agent=training_agent, skip_summarization=True),
     ],
-    after_tool_callback=simple_after_tool_modifier,
 )
