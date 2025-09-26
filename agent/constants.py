@@ -4,7 +4,7 @@ load_dotenv()
 
 ENV = os.getenv("ENV")
 
-if ENV == "local":
+if ENV == "local" or ENV == "dev":
     MODEL="gemini-2.5-flash"
     AMI_DATASTORE="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/asigurare-medicala_1754643254301"
     TRAINING_DATASTORE="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/training_1754549769417"
@@ -12,7 +12,7 @@ if ENV == "local":
     RELATII_MUNCA_DATASTORE="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/relatii-munca_1754549933330"
     LOGISTICA_DATASTORE="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/logistica_1754549990935"
     BENEFICII_DATASTORE="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/beneficii-2_1757671228699"
-    EVALUAREA_PERFORMANTEI_DATASTORE="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/evaluarea-performantei_1754550133241"
+    EVALUAREA_PERFORMANTEI_DATASTORE="projects/prj-hackathon-team2/locations/eu/collections/default_collection/dataStores/evaluarea-performantei-2_1758805273169"
 
     PROJECT_ID = "prj-hackathon-team2"
     LOCATION = "eu"

@@ -44,7 +44,7 @@ root_agent = LlmAgent(
     name="menu_agent",
     model=MODEL,
     generate_content_config=types.GenerateContentConfig(
-        temperature=0.1,
+        temperature=0.2,
         safety_settings=[
             types.SafetySetting(
                 category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,

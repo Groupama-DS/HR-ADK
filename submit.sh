@@ -127,7 +127,7 @@ gcloud run deploy "${SERVICE_NAME}" \
   --service-account "${RUNTIME_SERVICE_ACCOUNT_EMAIL}" \
   --timeout=600s \
   --memory=1Gi \
-  --set-env-vars="GOOGLE_GENAI_USE_VERTEXAI=True,GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${VERTEX_AI_LOCATION}" \
+  --set-env-vars="GOOGLE_GENAI_USE_VERTEXAI=True,GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${VERTEX_AI_LOCATION},ENV=dev" \
   --allow-unauthenticated
 
 echo
