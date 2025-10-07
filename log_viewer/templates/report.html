@@ -9,8 +9,8 @@
         h1 { text-align: center; color: #444; }
         .container { max-width: 100%; box-sizing: border-box; background: white; padding: 1.25rem; box-shadow: 0 0 0.6rem rgba(0,0,0,0.1); border-radius: 0.5rem; }
         form { margin-bottom: 2rem; padding: 1rem; background-color: #f8f8f8; border-radius: 0.5rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: center; }
-        form label { font-weight: bold; }
-        form input[type="datetime-local"], form input[type="checkbox"], form button { padding: 0.5rem; border-radius: 0.3rem; border: 1px solid #ddd; }
+        form label { font-weight: bold; margin-left: 1rem; }
+        form input[type="datetime-local"], form input[type="checkbox"], form select, form button { padding: 0.5rem; border-radius: 0.3rem; border: 1px solid #ddd; }
         form button { background-color: #007bff; color: white; cursor: pointer; border: none; font-weight: bold; }
         form button:hover { background-color: #0056b3; }
         table { border-collapse: collapse; width: 100%; margin-top: 1.25rem; }
@@ -27,6 +27,12 @@
 <div class='container'>
     <h1>Cloud Run Logs Report</h1>
     <form method="get">
+        <label for="project_id">Project ID:</label>
+        <select id="project_id" name="project_id">
+            {% for proj_id in project_ids %}
+            <option value="{{ proj_id }}" {% if proj_id == selected_project_id %}selected{% endif %}>{{ proj_id }}</option>
+            {% endfor %}
+        </select>
         <label for="start_time">Start Time (UTC):</label>
         <input type="datetime-local" id="start_time" name="start_time" value="{{ start_time }}">
         <label for="end_time">End Time (UTC):</label>

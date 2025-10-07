@@ -7,7 +7,7 @@ import markdown
 app = Flask(__name__)
 
 # --- Configuration ---
-PROJECT_ID = "prj-test-hrminds"  # Your Google Cloud project ID
+PROJECT_IDS = ["prj-prod-hrminds", "prj-test-hrminds", "prj-hackathon-team2"]
 SERVICE_NAME = "hr-chatbot-service"  # Your Cloud Run service name
 
 def get_cloud_run_logs(project_id, service_name, start_time, end_time, filter_feedback, filter_conversation):
@@ -103,6 +103,8 @@ def generate_table_body(logs):
 def report():
     is_first_load = not request.args
 
+    project_id = request.args.get('project_id', PROJECT_IDS[0])
+
     end_time_str = request.args.get('end_time')
     start_time_str = request.args.get('start_time')
     
@@ -120,7 +122,7 @@ def report():
         start_time = end_time - timedelta(days=1)
 
     logs = get_cloud_run_logs(
-        project_id=PROJECT_ID,
+        project_id=project_id,
         service_name=SERVICE_NAME,
         start_time=start_time,
         end_time=end_time,
@@ -135,7 +137,9 @@ def report():
         start_time=start_time.strftime('%Y-%m-%dT%H:%M'),
         end_time=end_time.strftime('%Y-%m-%dT%H:%M'),
         feedback=feedback,
-        conversation=conversation
+        conversation=conversation,
+        project_ids=PROJECT_IDS,
+        selected_project_id=project_id
     )
 
 if __name__ == '__main__':
